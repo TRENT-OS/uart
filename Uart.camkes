@@ -10,20 +10,20 @@ import <if_OS_BlockingWrite.camkes>;
 //------------------------------------------------------------------------------
 // Components
 
-#define DECLARE_COMPONENT_UART_HW(_type_hw_) \
+#define DECLARE_COMPONENT_UART_HW(_type_) \
     \
-    component uart_ ## _type_hw_ { \
+    component _type_ { \
         hardware; \
         \
-        dataport  Buf  regBase; \
+        dataport  Buf  mmio_regBase; \
         emits     IRQ  irq; \
     }
 
 
-#define DECLARE_COMPONENT_UART_DRV(_type_drv_) \
+#define DECLARE_COMPONENT_UART_DRV(_type_) \
     \
-    component _type_drv_ { \
-        dataport  Buf  regBase; \
+    component _type_ { \
+        dataport  Buf  mmio_regBase; \
         consumes  IRQ  irq; \
         \
         provides  if_OS_BlockingWrite   UartDrv; \
@@ -42,12 +42,12 @@ import <if_OS_BlockingWrite.camkes>;
     _type_drv_, \
     _inst_drv_) \
     \
-    component   uart_ ## _type_hw_   _inst_hw_; \
-    component   _type_drv_           _inst_drv_; \
+    component   _type_hw_    _inst_hw_; \
+    component   _type_drv_   _inst_drv_; \
     \
     connection  seL4HardwareMMIO       _inst_drv_ ## _inst_hw_ ## _mmio( \
-                from _inst_drv_.regBase, \
-                to   _inst_hw_.regBase); \
+                from _inst_drv_.mmio_regBase, \
+                to   _inst_hw_.mmio_regBase); \
     \
     connection  seL4HardwareInterrupt  _inst_drv_ ## _inst_hw_ ## _irq( \
                 from _inst_hw_.irq, \
@@ -64,11 +64,11 @@ import <if_OS_BlockingWrite.camkes>;
             _phys_addr_, \
             _irq_) \
     \
-    _inst_hw_.regBase_paddr  = _phys_addr_; \
-    _inst_hw_.regBase_size   = 0x1000; \
-    _inst_hw_.irq_irq_number = _irq_; \
+    _inst_hw_.mmio_regBase_paddr  = _phys_addr_; \
+    _inst_hw_.mmio_regBase_size   = 0x1000; \
+    _inst_hw_.irq_irq_number      = _irq_; \
     \
-    _inst_.inputDataPort     = "R";
+    _inst_.inputDataPort          = "R";
 
 
 //------------------------------------------------------------------------------
