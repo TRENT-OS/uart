@@ -432,7 +432,7 @@ void post_init(void)
 {
     Debug_LOG_INFO("initialize UART");
 
-    ctx.isValid         = false;
+    ctx.isValid = false;
 
     OS_Dataport_t out_dp = OS_DATAPORT_ASSIGN(Uart_outputFifoDataport);
 

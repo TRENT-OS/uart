@@ -23,8 +23,8 @@ import <if_OS_BlockingWrite.camkes>;
 #define DECLARE_COMPONENT_UART_DRV(_type_drv_) \
     \
     component _type_drv_ { \
-        dataport  Buf               regBase; \
-        consumes  IRQ               irq; \
+        dataport  Buf  regBase; \
+        consumes  IRQ  irq; \
         \
         provides  if_OS_BlockingWrite   UartDrv; \
         dataport  Buf                   Uart_inputDataport; \
