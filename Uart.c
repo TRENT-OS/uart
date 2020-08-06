@@ -5,6 +5,7 @@
  */
 
 #include "LibDebug/Debug.h"
+#include "OS_Dataport.h"
 
 #include <platsupport/chardev.h>
 #include <platsupport/serial.h>
@@ -194,9 +195,19 @@ UartDrv_write(
         return;
     }
 
+    OS_Dataport_t port = OS_DATAPORT_ASSIGN(Uart_inputDataport);
+    size_t port_size = OS_Dataport_getSize(port);
+    if (len > port_size)
+    {
+        Debug_LOG_ERROR("write length %zu exceeds port size %zu",
+                        len,
+                        port_size);
+        return;
+    }
+
     ssize_t ret = ctx.ps_cdev.write(
                       &(ctx.ps_cdev),
-                      Uart_inputDataport,
+                      OS_Dataport_getBuf(port),
                       len,
                       NULL,
                       NULL);
