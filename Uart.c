@@ -50,15 +50,13 @@ void irq_handle(void)
     int ret = irq_acknowledge();
     if (0 != ret)
     {
-        Debug_LOG_FATAL("%s: UART irq_acknowledge() error, code %d",
-                        __func__, ret);
+        Debug_LOG_FATAL("UART irq_acknowledge() failed, code %d", ret);
         // we do not return here as there could be anyway data to retrieve
     }
 
     if (!ctx.isValid)
     {
-        Debug_LOG_WARNING("%s: UART ISR is active while UART context is not initialised",
-                          __func__);
+        Debug_LOG_WARNING("ISR is active while context is not initialised");
         return;
     }
 
@@ -69,13 +67,13 @@ void irq_handle(void)
                                &readBuf, sizeof(readBuf), NULL, NULL);
         if (ret < 0)
         {
-            Debug_LOG_ERROR("%s: UART read error, code %d", __func__, ret);
+            Debug_LOG_ERROR("ctx.ps_cdev.read() failed, code %d", ret);
             return;
         }
         if (ret > Uart_Config_READ_BUF_SIZE)
         {
-            Debug_LOG_FATAL("%s: UART platform read() returned an amount of %zu when %zu is maximum expected",
-                            __func__, ret, Uart_Config_READ_BUF_SIZE);
+            Debug_LOG_ERROR("ctx.ps_cdev.read() returned %d (exceeds max %zu)",
+                            ret, sizeof(readBuf));
             return;
         }
         if (ret > 0)
@@ -112,7 +110,7 @@ void irq_handle(void)
                     // We do not have an error state in the current Uart to store
                     // there as well what happened here, maybe we have to consider
                     // this for the future
-                    Debug_LOG_WARNING("%s: UART FIFO is full, bytes will be discarded", __func__);
+                    Debug_LOG_WARNING("UART input FIFO full, discarding data");
                     Uart_DataAvailable_emit();
                     return;
                 }
@@ -183,7 +181,7 @@ UartDrv_write(
                       NULL);
     if (ret != len)
     {
-        Debug_LOG_ERROR("write error, could only write %zd of %zu bytes",
+        Debug_LOG_ERROR("write error, could only write %d of %zu bytes",
                         ret, len);
     }
 }
@@ -207,13 +205,13 @@ void post_init(void)
 #endif
     if (!FifoDataport_ctor(ctx.outputFifo, fifoCapacity))
     {
-        Debug_LOG_ERROR("FifoDataport_ctor() failed in %s", __FILE__);
+        Debug_LOG_ERROR("FifoDataport_ctor() failed");
         return;
     }
 #if Uart_Config_BACKUP_FIFO_SIZE > 0
     if (!CharFifo_ctor(&ctx.backupFifo, backupBuf, Uart_Config_BACKUP_FIFO_SIZE))
     {
-        Debug_LOG_ERROR("CharFifo_ctor() failed in %s", __FILE__);
+        Debug_LOG_ERROR("CharFifo_ctor() failed");
         return;
     }
 #endif
@@ -243,7 +241,7 @@ void post_init(void)
                                regBase);
     if (dev != &(ctx.ps_cdev))
     {
-        Debug_LOG_ERROR("ps_cdev_init() failed, code %p", dev);
+        Debug_LOG_ERROR("ps_cdev_init() failed, returned dev=%p", dev);
         return;
     }
 
