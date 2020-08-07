@@ -17,6 +17,7 @@
 
 #include "LibIO/FifoDataport.h"
 #include "LibUtil/CharFifo.h"
+#include "OS_Dataport.h"
 
 #if defined(UART_CONFIG_H_FILE)
 #   define Uart_XSTR(d)    Uart_STR(d)
@@ -217,11 +218,12 @@ void post_init(void)
     Debug_LOG_INFO("initialize UART");
 
     ctx.isValid         = false;
-    ctx.outputFifo      = (FifoDataport*) Uart_outputFifoDataport;
+    ctx.fifoOverflow    = false;
 
-    size_t fifoCapacity =
-        sizeof( *(Uart_outputFifoDataport) ) - offsetof(FifoDataport, data);
-
+    OS_Dataport_t out_dp = OS_DATAPORT_ASSIGN(Uart_outputFifoDataport);
+    ctx.outputFifo = (FifoDataport*)OS_Dataport_getBuf(out_dp);
+    size_t fifoCapacity = OS_Dataport_getSize(out_dp)
+                          - offsetof(FifoDataport, data);
     if (!FifoDataport_ctor(ctx.outputFifo, fifoCapacity))
     {
         Debug_LOG_ERROR("FifoDataport_ctor() failed");
