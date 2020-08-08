@@ -30,7 +30,7 @@
 
 // Number of bytes read at most from the UART FIFO at once
 #if !defined(Uart_Config_READ_BUF_SIZE)
-#define Uart_Config_READ_BUF_SIZE       32
+#define Uart_Config_READ_BUF_SIZE       512
 #endif
 
 // Size of the driver's internal software FIFO, that sits between the UART's
