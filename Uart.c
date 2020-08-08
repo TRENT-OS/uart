@@ -32,19 +32,19 @@
 #define Uart_Config_READ_BUF_SIZE       32
 #endif
 
-// Size of the driver's internal software FIFO, that acts as a backup for the
-// FIFO in the dataport.
-#if !defined(Uart_Config_BACKUP_FIFO_SIZE)
-#   define Uart_Config_BACKUP_FIFO_SIZE    4096 // value found by testing
+// Size of the driver's internal software FIFO, that sits between the UART's
+// hardware FIFO and the dataport FIFO
+#if !defined(Uart_Config_INTERNAL_FIFO_SIZE)
+#   define Uart_Config_INTERNAL_FIFO_SIZE    4096 // value found by testing
 #endif
 
 
-#if defined(UART_HAS_BACK_FIFO)
-#error "UART_HAS_BACK_FIFO must not be defined here"
+#if defined(UART_USE_INTERNAL_FIFO)
+#error "UART_USE_INTERNAL_FIFO must not be defined here"
 #endif
 
-#if defined(Uart_Config_BACKUP_FIFO_SIZE) && (Uart_Config_BACKUP_FIFO_SIZE > 0)
-#define UART_HAS_BACK_FIFO
+#if defined(Uart_Config_INTERNAL_FIFO_SIZE) && (Uart_Config_INTERNAL_FIFO_SIZE > 0)
+#define UART_USE_INTERNAL_FIFO
 #endif
 
 
@@ -55,8 +55,8 @@ static struct
     ps_chardevice_t  ps_cdev;
     FifoDataport*    outputFifo;
 
-#ifdef UART_HAS_BACK_FIFO
-    CharFifo         backupFifo;
+#ifdef UART_USE_INTERNAL_FIFO
+    CharFifo         internalFifo;
 #endif
 
 } ctx;
@@ -84,24 +84,24 @@ void drain_input_fifo(void)
         }
         if (ret > 0)
         {
-            bool isBackupFifoEmpty =
-#ifdef UART_HAS_BACK_FIFO
-                CharFifo_isEmpty(&ctx.backupFifo);
+            bool isInternalFifoEmpty =
+#ifdef UART_USE_INTERNAL_FIFO
+                CharFifo_isEmpty(&ctx.internalFifo);
 #else
                 false;
 #endif
 
             size_t  i = 0;
-            bool    useBackupFifo = !isBackupFifoEmpty;
+            bool    useInternalFifo = !isInternalFifoEmpty;
 
-            while (i < ret && !useBackupFifo)
+            while (i < ret && !useInternalFifo)
             {
                 size_t toWrite = ret - i;
                 size_t written =
                     FifoDataport_write(ctx.outputFifo, &readBuf[i], toWrite);
                 if (toWrite < written)
                 {
-                    useBackupFifo = true;
+                    useInternalFifo = true;
                 }
                 else
                 {
@@ -111,8 +111,8 @@ void drain_input_fifo(void)
             for (size_t j = i; j < ret; j++)
             {
 
-#ifdef UART_HAS_BACK_FIFO
-                if (!CharFifo_push(&ctx.backupFifo, &readBuf[j]))
+#ifdef UART_USE_INTERNAL_FIFO
+                if (!CharFifo_push(&ctx.internalFifo, &readBuf[j]))
 #endif
                 {
                     // We do not have an error state in the current Uart to store
@@ -139,19 +139,19 @@ void drain_input_fifo(void)
             Uart_DataAvailable_emit();
         }
 
-#ifdef UART_HAS_BACK_FIFO
-        // try to drain the backup FIFO
-        size_t backupFifoSize = CharFifo_getSize(&ctx.backupFifo);
+#ifdef UART_USE_INTERNAL_FIFO
+        // try to drain the internal FIFO
+        size_t internalFifoSize = CharFifo_getSize(&ctx.internalFifo);
         size_t i = 0;
-        for (; i < backupFifoSize; i++)
+        for (; i < internalFifoSize; i++)
         {
             if (!FifoDataport_write(ctx.outputFifo,
-                                    CharFifo_getFirst(&ctx.backupFifo),
+                                    CharFifo_getFirst(&ctx.internalFifo),
                                     1))
             {
                 break;
             }
-            CharFifo_pop(&ctx.backupFifo);
+            CharFifo_pop(&ctx.internalFifo);
         }
         if (i > 0)
         {
@@ -161,8 +161,8 @@ void drain_input_fifo(void)
 
     }
     while (ret > 0
-#ifdef UART_HAS_BACK_FIFO
-           && !CharFifo_isEmpty(&ctx.backupFifo)
+#ifdef UART_USE_INTERNAL_FIFO
+           && !CharFifo_isEmpty(&ctx.internalFifo)
 #endif
           );
 }
@@ -237,7 +237,6 @@ void post_init(void)
     Debug_LOG_INFO("initialize UART");
 
     ctx.isValid         = false;
-    ctx.fifoOverflow    = false;
 
     OS_Dataport_t out_dp = OS_DATAPORT_ASSIGN(Uart_outputFifoDataport);
     ctx.outputFifo = (FifoDataport*)OS_Dataport_getBuf(out_dp);
@@ -249,10 +248,10 @@ void post_init(void)
         return;
     }
 
-#ifdef UART_HAS_BACK_FIFO
+#ifdef UART_USE_INTERNAL_FIFO
 
-    static char backupBuf[Uart_Config_BACKUP_FIFO_SIZE];
-    if (!CharFifo_ctor(&ctx.backupFifo, backupBuf, sizeof(backupBuf)))
+    static char internalBuf[Uart_Config_INTERNAL_FIFO_SIZE];
+    if (!CharFifo_ctor(&ctx.internalFifo, internalBuf, sizeof(internalBuf)))
     {
         Debug_LOG_ERROR("CharFifo_ctor() failed");
         return;
