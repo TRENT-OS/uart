@@ -14,6 +14,7 @@
 #include <camkes/io.h>
 
 #include <stdbool.h>
+
 #include "LibIO/FifoDataport.h"
 #include "LibUtil/CharFifo.h"
 
@@ -44,15 +45,18 @@
 #define UART_HAS_BACK_FIFO
 #endif
 
+
 static struct
 {
     bool             isValid;
     ps_io_ops_t      io_ops;
     ps_chardevice_t  ps_cdev;
     FifoDataport*    outputFifo;
+
 #ifdef UART_HAS_BACK_FIFO
     CharFifo         backupFifo;
 #endif
+
 } ctx;
 
 
@@ -96,6 +100,7 @@ void irq_handle(void)
 #else
                 false;
 #endif
+
             size_t  i = 0;
             bool    useBackupFifo = !isBackupFifoEmpty;
 
@@ -115,6 +120,7 @@ void irq_handle(void)
             }
             for (size_t j = i; j < ret; j++)
             {
+
 #ifdef UART_HAS_BACK_FIFO
                 if (!CharFifo_push(&ctx.backupFifo, &readBuf[j]))
 #endif
@@ -142,6 +148,7 @@ void irq_handle(void)
              */
             Uart_DataAvailable_emit();
         }
+
 #ifdef UART_HAS_BACK_FIFO
         // try to drain the backup FIFO
         size_t backupFifoSize = CharFifo_getSize(&ctx.backupFifo);
@@ -161,6 +168,7 @@ void irq_handle(void)
             Uart_DataAvailable_emit();
         }
 #endif
+
     }
     while (ret > 0
 #ifdef UART_HAS_BACK_FIFO
@@ -210,23 +218,27 @@ void post_init(void)
 
     ctx.isValid         = false;
     ctx.outputFifo      = (FifoDataport*) Uart_outputFifoDataport;
+
     size_t fifoCapacity =
         sizeof( *(Uart_outputFifoDataport) ) - offsetof(FifoDataport, data);
-#ifdef UART_HAS_BACK_FIFO
-    static char backupBuf[Uart_Config_BACKUP_FIFO_SIZE];
-#endif
+
     if (!FifoDataport_ctor(ctx.outputFifo, fifoCapacity))
     {
         Debug_LOG_ERROR("FifoDataport_ctor() failed");
         return;
     }
+
 #ifdef UART_HAS_BACK_FIFO
+
+    static char backupBuf[Uart_Config_BACKUP_FIFO_SIZE];
     if (!CharFifo_ctor(&ctx.backupFifo, backupBuf, Uart_Config_BACKUP_FIFO_SIZE))
     {
         Debug_LOG_ERROR("CharFifo_ctor() failed");
         return;
     }
+
 #endif
+
     int ret = camkes_io_ops( &(ctx.io_ops) );
     if (0 != ret)
     {
