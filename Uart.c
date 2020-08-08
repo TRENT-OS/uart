@@ -63,21 +63,9 @@ static struct
 
 
 //------------------------------------------------------------------------------
-void irq_handle(void)
+void drain_input_fifo(void)
 {
-    int ret = irq_acknowledge();
-    if (0 != ret)
-    {
-        Debug_LOG_FATAL("UART irq_acknowledge() failed, code %d", ret);
-        // we do not return here as there could be anyway data to retrieve
-    }
-
-    if (!ctx.isValid)
-    {
-        Debug_LOG_WARNING("ISR is active while context is not initialised");
-        return;
-    }
-
+    int ret;
     do
     {
         static char readBuf[Uart_Config_READ_BUF_SIZE];
@@ -177,6 +165,26 @@ void irq_handle(void)
            && !CharFifo_isEmpty(&ctx.backupFifo)
 #endif
           );
+}
+
+
+//------------------------------------------------------------------------------
+void irq_handle(void)
+{
+    if (!ctx.isValid)
+    {
+        Debug_LOG_WARNING("ISR is active while context is not initialised");
+    }
+    else
+    {
+        drain_input_fifo();
+    }
+
+    int ret = irq_acknowledge();
+    if (0 != ret)
+    {
+        Debug_LOG_ERROR("UART irq_acknowledge() failed, code %d", ret);
+    }
 }
 
 
