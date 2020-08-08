@@ -231,7 +231,7 @@ void post_init(void)
 #ifdef UART_HAS_BACK_FIFO
 
     static char backupBuf[Uart_Config_BACKUP_FIFO_SIZE];
-    if (!CharFifo_ctor(&ctx.backupFifo, backupBuf, Uart_Config_BACKUP_FIFO_SIZE))
+    if (!CharFifo_ctor(&ctx.backupFifo, backupBuf, sizeof(backupBuf)))
     {
         Debug_LOG_ERROR("CharFifo_ctor() failed");
         return;
