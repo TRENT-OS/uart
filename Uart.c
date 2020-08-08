@@ -21,15 +21,27 @@
 #   define Uart_XSTR(d)    Uart_STR(d)
 #   define Uart_STR(d)     #d
 #   include Debug_XSTR(UART_CONFIG_H_FILE)
-#else
-// defines, in the ISR loop, how many bytes per iteration we try to read before
-// to signal data available
-#   define Uart_Config_READ_BUF_SIZE       32
-// defines the size of a backup FIFO. The aim of the backup FIFO is to allow
-// flexible amount of bytes retained in the UART. The size of the main shared
-// FIFO (FifoDataport) could be indeed constrained by system constraints and not
-// sufficient to avoid data-loss
-#   define Uart_Config_BACKUP_FIFO_SIZE    4096
+#endif
+
+
+// Number of bytes read at most from the UART FIFO at once
+#if !defined(Uart_Config_READ_BUF_SIZE)
+#define Uart_Config_READ_BUF_SIZE       32
+#endif
+
+// Size of the driver's internal software FIFO, that acts as a backup for the
+// FIFO in the dataport.
+#if !defined(Uart_Config_BACKUP_FIFO_SIZE)
+#   define Uart_Config_BACKUP_FIFO_SIZE    4096 // value found by testing
+#endif
+
+
+#if defined(UART_HAS_BACK_FIFO)
+#error "UART_HAS_BACK_FIFO must not be defined here"
+#endif
+
+#if defined(Uart_Config_BACKUP_FIFO_SIZE) && (Uart_Config_BACKUP_FIFO_SIZE > 0)
+#define UART_HAS_BACK_FIFO
 #endif
 
 static struct
@@ -38,7 +50,7 @@ static struct
     ps_io_ops_t      io_ops;
     ps_chardevice_t  ps_cdev;
     FifoDataport*    outputFifo;
-#if Uart_Config_BACKUP_FIFO_SIZE > 0
+#ifdef UART_HAS_BACK_FIFO
     CharFifo         backupFifo;
 #endif
 } ctx;
@@ -79,7 +91,7 @@ void irq_handle(void)
         if (ret > 0)
         {
             bool isBackupFifoEmpty =
-#if Uart_Config_BACKUP_FIFO_SIZE > 0
+#ifdef UART_HAS_BACK_FIFO
                 CharFifo_isEmpty(&ctx.backupFifo);
 #else
                 false;
@@ -103,7 +115,7 @@ void irq_handle(void)
             }
             for (size_t j = i; j < ret; j++)
             {
-#if Uart_Config_BACKUP_FIFO_SIZE > 0
+#ifdef UART_HAS_BACK_FIFO
                 if (!CharFifo_push(&ctx.backupFifo, &readBuf[j]))
 #endif
                 {
@@ -130,7 +142,7 @@ void irq_handle(void)
              */
             Uart_DataAvailable_emit();
         }
-#if Uart_Config_BACKUP_FIFO_SIZE > 0
+#ifdef UART_HAS_BACK_FIFO
         // try to drain the backup FIFO
         size_t backupFifoSize = CharFifo_getSize(&ctx.backupFifo);
         size_t i = 0;
@@ -151,7 +163,7 @@ void irq_handle(void)
 #endif
     }
     while (ret > 0
-#if Uart_Config_BACKUP_FIFO_SIZE > 0
+#ifdef UART_HAS_BACK_FIFO
            && !CharFifo_isEmpty(&ctx.backupFifo)
 #endif
           );
@@ -200,7 +212,7 @@ void post_init(void)
     ctx.outputFifo      = (FifoDataport*) Uart_outputFifoDataport;
     size_t fifoCapacity =
         sizeof( *(Uart_outputFifoDataport) ) - offsetof(FifoDataport, data);
-#if Uart_Config_BACKUP_FIFO_SIZE > 0
+#ifdef UART_HAS_BACK_FIFO
     static char backupBuf[Uart_Config_BACKUP_FIFO_SIZE];
 #endif
     if (!FifoDataport_ctor(ctx.outputFifo, fifoCapacity))
@@ -208,7 +220,7 @@ void post_init(void)
         Debug_LOG_ERROR("FifoDataport_ctor() failed");
         return;
     }
-#if Uart_Config_BACKUP_FIFO_SIZE > 0
+#ifdef UART_HAS_BACK_FIFO
     if (!CharFifo_ctor(&ctx.backupFifo, backupBuf, Uart_Config_BACKUP_FIFO_SIZE))
     {
         Debug_LOG_ERROR("CharFifo_ctor() failed");
