@@ -36,7 +36,7 @@
 // Size of the driver's internal software FIFO, that sits between the UART's
 // hardware FIFO and the dataport FIFO
 #if !defined(Uart_Config_INTERNAL_FIFO_SIZE)
-#   define Uart_Config_INTERNAL_FIFO_SIZE    4096 // value found by testing
+#   define Uart_Config_INTERNAL_FIFO_SIZE    0
 #endif
 
 
