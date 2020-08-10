@@ -52,7 +52,7 @@
 typedef struct
 {
     bool             isValid;
-    bool             fifoOverflow;
+    char*            fifoOverflow;
     ps_io_ops_t      io_ops;
     ps_chardevice_t  ps_cdev;
     FifoDataport*    outputFifo;
@@ -137,6 +137,23 @@ static size_t internalFifoDrainToDataPortFifo(
 
 
 //------------------------------------------------------------------------------
+void setOverflow(
+    ctx_t* ctx,
+    bool  isOverflow)
+{
+    *(ctx->fifoOverflow) = isOverflow ? (char)1 : (char)0;
+}
+
+
+//------------------------------------------------------------------------------
+bool isOverflow(
+    ctx_t* ctx)
+{
+    return (0 != *(ctx->fifoOverflow));
+}
+
+
+//------------------------------------------------------------------------------
 void trigger_event(void)
 {
     Uart_DataAvailable_emit();
@@ -182,7 +199,7 @@ void drain_input_fifo(
 
         // do nothing on overflow
         // ToDo: we need an API where the upper layer has to reset this.
-        if (ctx->fifoOverflow)
+        if (isOverflow(ctx))
         {
             if (0 == bytesRead)
             {
@@ -236,8 +253,8 @@ void drain_input_fifo(
             assert( written <= bytesRead );
             if (written < bytesRead)
             {
-                // all FIFO are full, so we have to discard the remaining data
-                ctx->fifoOverflow = true;
+                // all FIFOs are full, so we have to discard the remaining data
+                setOverflow(ctx, true);
 
                 Debug_LOG_ERROR(
                     "internal FIFO full, discarding %zu bytes",
@@ -286,8 +303,8 @@ void drain_input_fifo(
             assert( writtenInternal <= lenLeft );
             if (writtenInternal < lenLeft)
             {
-                // all FIFO are full, so we have to discard the remaining data
-                ctx->fifoOverflow = true;
+                // all FIFOs are full, so we have to discard the remaining data
+                setOverflow(ctx, true);
 
                 Debug_LOG_ERROR(
                     "internal FIFO full, discarding %zu bytes",
@@ -297,7 +314,7 @@ void drain_input_fifo(
 #else // not UART_USE_INTERNAL_FIFO
 
             // all FIFO are full, so we have to discard the remaining data
-            ctx->fifoOverflow = true;
+            setOverflow(ctx, true);
 
             Debug_LOG_ERROR(
                 "dataport FIFO full, discarding %zu bytes",
@@ -385,9 +402,19 @@ void post_init(void)
     ctx.isValid         = false;
 
     OS_Dataport_t out_dp = OS_DATAPORT_ASSIGN(Uart_outputFifoDataport);
+
+    // the last byte of the dataport holds an overflow flag
+    ctx.fifoOverflow = (char*)( (uintptr_t)OS_Dataport_getBuf(out_dp)
+                                + OS_Dataport_getSize(out_dp) - 1 );
+
+    setOverflow(&ctx, false);
+
     ctx.outputFifo = (FifoDataport*)OS_Dataport_getBuf(out_dp);
+
+    // the last bytes is used a overflow indicator
     size_t fifoCapacity = OS_Dataport_getSize(out_dp)
-                          - offsetof(FifoDataport, data);
+                          - offsetof(FifoDataport, data) - 1;
+
     if (!FifoDataport_ctor(ctx.outputFifo, fifoCapacity))
     {
         Debug_LOG_ERROR("FifoDataport_ctor() failed");
