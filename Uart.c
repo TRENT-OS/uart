@@ -372,6 +372,7 @@ void irq_handle(void)
     }
     else
     {
+        ctx.ps_cdev.handle_irq(&(ctx.ps_cdev));
         drain_input_fifo(&ctx);
     }
 
