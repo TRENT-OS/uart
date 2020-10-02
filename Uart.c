@@ -465,6 +465,9 @@ void post_init(void)
 
 #endif // UART_USE_INTERNAL_FIFO
 
+    // get a special set of io operations that are aware of the CAmkES memory
+    // mappings, ie they can't really map anything, but look up the mapping in
+    // the existing CAmkES mappings instead.
     int ret = camkes_io_ops( &(ctx.io_ops) );
     if (0 != ret)
     {
