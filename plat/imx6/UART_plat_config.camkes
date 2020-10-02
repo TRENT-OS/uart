@@ -1,0 +1,17 @@
+/*
+ *  UART defaults for platform imx6
+ *
+ *  Copyright (C) 2020, Hensoldt Cyber GmbH
+ *
+ */
+
+// use the alias names defined in the device tree
+
+DECLARE_DTB_COMPONENT_UART(UART_0, {"aliases":"serial0"})
+DECLARE_DTB_COMPONENT_UART(UART_1, {"aliases":"serial1"})
+DECLARE_DTB_COMPONENT_UART(UART_2, {"aliases":"serial2"})
+DECLARE_DTB_COMPONENT_UART(UART_3, {"aliases":"serial3"})
+DECLARE_DTB_COMPONENT_UART(UART_4, {"aliases":"serial4"})
+
+
+

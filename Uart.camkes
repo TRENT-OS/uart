@@ -7,85 +7,29 @@
 
 import <if_OS_BlockingWrite.camkes>;
 
-//------------------------------------------------------------------------------
-// Components
 
-#define DECLARE_COMPONENT_UART_HW(_type_hw_) \
+#define DECLARE_DTB_COMPONENT_UART(_type_, _dtb_name_) \
     \
-    component uart_ ## _type_hw_ { \
-        hardware; \
-        \
-        dataport  Buf  regBase; \
-        emits     IRQ  irq; \
-    }
-
-
-#define DECLARE_COMPONENT_UART_DRV(_type_drv_) \
-    \
-    component _type_drv_ { \
-        dataport  Buf  regBase; \
-        consumes  IRQ  irq; \
+    component _type_ { \
         \
         provides  if_OS_BlockingWrite   UartDrv; \
         dataport  Buf                   Uart_inputDataport; \
         dataport  Buf                   Uart_outputFifoDataport; \
         emits     EventDataAvailable    Uart_DataAvailable; \
-    }
+        \
+        emits     Dummy  hw_src; \
+        consumes  Dummy  dev; \
+        \
+        composition { \
+            connection seL4DTBHardware con_hw(from hw_src, to dev); \
+        } \
+        \
+        configuration { \
+            dev.dtb = dtb(_dtb_name_); \
+            dev.generate_interrupts = 1; \
+        }  \
+    } \
 
 
-//------------------------------------------------------------------------------
-// Instance Connection
-
-#define DECLARE_AND_CONNECT_INSTANCE_UART_DRV_HW( \
-    _type_hw_, \
-    _inst_hw_, \
-    _type_drv_, \
-    _inst_drv_) \
-    \
-    component   uart_ ## _type_hw_   _inst_hw_; \
-    component   _type_drv_           _inst_drv_; \
-    \
-    connection  seL4HardwareMMIO       _inst_drv_ ## _inst_hw_ ## _mmio( \
-                from _inst_drv_.regBase, \
-                to   _inst_hw_.regBase); \
-    \
-    connection  seL4HardwareInterrupt  _inst_drv_ ## _inst_hw_ ## _irq( \
-                from _inst_hw_.irq, \
-                to   _inst_drv_.irq);
-
-
-//------------------------------------------------------------------------------
-// Instance Configuration
-
-
-#define CONFIGURE_INSTANCE_UART_HW( \
-            _inst_hw_, \
-            _inst_, \
-            _phys_addr_, \
-            _irq_) \
-    \
-    _inst_hw_.regBase_paddr  = _phys_addr_; \
-    _inst_hw_.regBase_size   = 0x1000; \
-    _inst_hw_.irq_irq_number = _irq_; \
-    \
-    _inst_.inputDataPort     = "R";
-
-
-//------------------------------------------------------------------------------
-// convenience macros, since UART = Driver + HW
-
-#define DECLARE_COMPONENT_UART(_type_) \
-            DECLARE_COMPONENT_UART_HW(_type_ ## _hw) \
-            DECLARE_COMPONENT_UART_DRV(_type_)
-
-
-#define DECLARE_AND_CONNECT_INSTANCE_UART(_type_, _inst_) \
-    DECLARE_AND_CONNECT_INSTANCE_UART_DRV_HW( \
-        _type_ ## _hw, \
-        _inst_ ## _hw, \
-        _type_, \
-        _inst_)
-
-
-#define CONFIGURE_INSTANCE_UART(_inst_, _phys_addr_, _irq_) \
-    CONFIGURE_INSTANCE_UART_HW(_inst_ ## _hw, _inst_, _phys_addr_, _irq_)
+// platform specific UART details
+#include "UART_plat_config.camkes"

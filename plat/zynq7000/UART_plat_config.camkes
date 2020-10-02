@@ -1,0 +1,10 @@
+/*
+ *  UART defaults for platform zynq7000
+ *
+ *  Copyright (C) 2020, Hensoldt Cyber GmbH
+ *
+ */
+
+
+DECLARE_DTB_COMPONENT_UART(UART_0, {"path":"/amba/serial@e0000000"})
+DECLARE_DTB_COMPONENT_UART(UART_1, {"path":"/amba/serial@e0001000"})

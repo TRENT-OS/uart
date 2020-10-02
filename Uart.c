@@ -21,6 +21,11 @@
 #include "LibUtil/CharFifo.h"
 #include "OS_Dataport.h"
 
+// UART ID used by lib-platsupport must be set
+#if !defined(UART_CONFIG_ID)
+#error "UART_CONFIG_ID missing"
+#endif
+
 // Number of bytes read at most from the UART FIFO at once
 #if !defined(Uart_Config_READ_BUF_SIZE)
 #define Uart_Config_READ_BUF_SIZE       512
@@ -357,7 +362,7 @@ void drain_input_fifo(
 
 
 //------------------------------------------------------------------------------
-void irq_handle(void)
+void dev_irq_handle(ps_irq_t *irq)
 {
     if (!ctx.isValid)
     {
@@ -369,7 +374,7 @@ void irq_handle(void)
         drain_input_fifo(&ctx);
     }
 
-    int ret = irq_acknowledge();
+    int ret = dev_irq_acknowledge(irq);
     if (0 != ret)
     {
         Debug_LOG_ERROR("UART irq_acknowledge() failed, code %d", ret);
@@ -468,23 +473,14 @@ void post_init(void)
         return;
     }
 
-    // We can't use ps_cdev_init(), because it expects an ID, usually simply
-    // set to PS_SERIAL_DEFAULT to use the default UART.
-    //
-    // ps_chardevice_t* dev = ps_cdev_init(
-    //                            PS_SERIAL_DEFAULT,
-    //                            &(ctx.io_ops),
-    //                            &(ctx.ps_cdev);
-    //
-    // All we have from CAmkES is "regBase" with the virtual address of the
-    // registers. Since the structure behind the ID just contains the physical
-    // address, there is no change to correlate this. Luckily, some platforms
-    // implement ps_cdev_static_init(), where we can pass the virtual address
-    // directly.
-    ps_chardevice_t* dev = ps_cdev_static_init(
+    // This will get the physical address of the UART peripheral from the
+    // UART ID and then maps it using the passed io_ops. Since these ops are
+    // just dummies, we expect them to to find the existing CAmkES mapping of
+    // the UART.
+    ps_chardevice_t* dev = ps_cdev_init(
+                               UART_CONFIG_ID,
                                &(ctx.io_ops),
-                               &(ctx.ps_cdev),
-                               regBase);
+                               &(ctx.ps_cdev));
     if (dev != &(ctx.ps_cdev))
     {
         Debug_LOG_ERROR("ps_cdev_init() failed, returned dev=%p", dev);
