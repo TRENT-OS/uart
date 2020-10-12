@@ -21,13 +21,6 @@
 #include "LibUtil/CharFifo.h"
 #include "OS_Dataport.h"
 
-#if defined(UART_CONFIG_H_FILE)
-#   define Uart_XSTR(d)    Uart_STR(d)
-#   define Uart_STR(d)     #d
-#   include Debug_XSTR(UART_CONFIG_H_FILE)
-#endif
-
-
 // Number of bytes read at most from the UART FIFO at once
 #if !defined(Uart_Config_READ_BUF_SIZE)
 #define Uart_Config_READ_BUF_SIZE       512
