@@ -1,0 +1,16 @@
+/*
+ *  UART defaults for platform rpi3 
+ *
+ *  Copyright (C) 2020, Hensoldt Cyber GmbH
+ *
+ */
+
+// use the alias names defined in the device tree
+// device tree in linux repository: arch/arm/boot/dts/bcm283x.dtsi
+// if aliases are not wanted, you can also do:
+//DECLARE_DTB_COMPONENT_UART(UART_0, {"path":"/soc/serial@7e201000"})
+//DECLARE_DTB_COMPONENT_UART(UART_1, {"path":"/soc/serial@7e215040"})
+
+DECLARE_DTB_COMPONENT_UART(UART_0, {"aliases":"serial0"})
+DECLARE_DTB_COMPONENT_UART(UART_1, {"aliases":"serial1"})
+
