@@ -21,9 +21,6 @@ cmake_minimum_required(VERSION 3.17)
 #
 function(DeclareCAmkESComponent_UART name id)
 
-    CAmkESAddCPPInclude(
-        "${CMAKE_CURRENT_FUNCTION_LIST_DIR}/plat/${KernelPlatform}")
-
     DeclareCAmkESComponent(
         ${name}
         SOURCES
@@ -45,8 +42,9 @@ endfunction()
 # declare CAmkES components for all UARTs of a platform
 function(DeclareCAmkESComponents_for_UARTs)
 
-    include("${CMAKE_CURRENT_FUNCTION_LIST_DIR}/plat/${KernelPlatform}/CMakeLists.txt")
-
-    plat_DeclareCAmkESComponents_for_UARTs()
+    include(
+        "${CMAKE_CURRENT_FUNCTION_LIST_DIR}/plat/${KernelPlatform}/CMakeLists.txt"
+        OPTIONAL
+    )
 
 endfunction()
