@@ -6,6 +6,7 @@
 
 cmake_minimum_required(VERSION 3.17)
 
+
 function(plat_DeclareCAmkESComponents_for_UARTs)
 
     DeclareCAmkESComponent_UART(UART_0 0)
