@@ -1,5 +1,5 @@
 #
-# UARTs on platform imx6
+# UART defaults for platfrom sabre (i.MX6 based Sabre Lite board)
 #
 # Copyright (C) 2020, Hensoldt Cyber GmbH
 #
