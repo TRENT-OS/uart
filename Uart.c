@@ -53,7 +53,7 @@ typedef struct
     char*            fifoOverflow;
     ps_io_ops_t      io_ops;
     ps_chardevice_t  ps_cdev;
-    FifoDataport*    outputFifo;
+    FifoDataport*    inputFifo;
 
 #ifdef UART_USE_INTERNAL_FIFO
     CharFifo         internalFifo;
@@ -107,14 +107,14 @@ static size_t internalFifoDrainToDataPortFifo(
     for (size_t pos = 0; pos < internalFifoSize; pos++)
     {
         if (!FifoDataport_write(
-                ctx->outputFifo,
+                ctx->inputFifo,
                 CharFifo_getFirst(&ctx->internalFifo),
                 1))
         {
             // dataport FIFO is full, can't write more data from the internal
             // FIFO there. Note that the dataport FIFO is accessed by different
             // threads, so we can't do something like
-            //     assert( CharFifo_isFull(ctx->outputFifo) );
+            //     assert( CharFifo_isFull(ctx->inputFifo) );
             // here. Immediately after we've found it to be full, the other
             // thread my have read something from it, so it is no longer full.
             return pos;
@@ -309,7 +309,7 @@ void drain_input_fifo(
 
         // there is data from the UART, write it into the dataport FIFO
         size_t written = FifoDataport_write(
-                             ctx->outputFifo,
+                             ctx->inputFifo,
                              readBuf,
                              bytesRead);
         assert( written <= bytesRead );
@@ -397,7 +397,7 @@ UartDrv_write(
         return;
     }
 
-    OS_Dataport_t port = OS_DATAPORT_ASSIGN(Uart_inputDataport);
+    OS_Dataport_t port = OS_DATAPORT_ASSIGN(Uart_outputDataport);
     size_t port_size = OS_Dataport_getSize(port);
     if (len > port_size)
     {
@@ -432,21 +432,21 @@ void post_init(void)
 
     ctx.isValid = false;
 
-    OS_Dataport_t out_dp = OS_DATAPORT_ASSIGN(Uart_outputFifoDataport);
+    OS_Dataport_t port = OS_DATAPORT_ASSIGN(Uart_inputFifoDataport);
 
     // the last byte of the dataport holds an overflow flag
-    ctx.fifoOverflow = (char*)( (uintptr_t)OS_Dataport_getBuf(out_dp)
-                                + OS_Dataport_getSize(out_dp) - 1 );
+    ctx.fifoOverflow = (char*)( (uintptr_t)OS_Dataport_getBuf(port)
+                                + OS_Dataport_getSize(port) - 1 );
 
     setOverflow(&ctx, false);
 
-    ctx.outputFifo = (FifoDataport*)OS_Dataport_getBuf(out_dp);
+    ctx.inputFifo = (FifoDataport*)OS_Dataport_getBuf(port);
 
     // the last bytes is used a overflow indicator
-    size_t fifoCapacity = OS_Dataport_getSize(out_dp)
+    size_t fifoCapacity = OS_Dataport_getSize(port)
                           - offsetof(FifoDataport, data) - 1;
 
-    if (!FifoDataport_ctor(ctx.outputFifo, fifoCapacity))
+    if (!FifoDataport_ctor(ctx.inputFifo, fifoCapacity))
     {
         Debug_LOG_ERROR("FifoDataport_ctor() failed");
         return;

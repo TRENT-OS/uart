@@ -13,8 +13,8 @@ import <if_OS_BlockingWrite.camkes>;
     component _type_ { \
         \
         provides  if_OS_BlockingWrite   UartDrv; \
-        dataport  Buf                   Uart_inputDataport; \
-        dataport  Buf                   Uart_outputFifoDataport; \
+        dataport  Buf                   Uart_inputFifoDataport; \
+        dataport  Buf                   Uart_outputDataport; \
         emits     EventDataAvailable    Uart_DataAvailable; \
         \
         emits     Dummy  hw_src; \
