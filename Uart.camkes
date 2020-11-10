@@ -27,7 +27,7 @@ import <if_OS_BlockingWrite.camkes>;
         configuration { \
             dev.dtb = dtb(_dtb_name_); \
             dev.generate_interrupts = 1; \
-        }  \
+        } \
     } \
 
 
