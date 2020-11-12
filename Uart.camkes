@@ -4,6 +4,7 @@
  *  Copyright (C) 2020, Hensoldt Cyber GmbH
  */
 
+#pragma once
 
 import <if_OS_BlockingWrite.camkes>;
 
