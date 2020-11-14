@@ -9,8 +9,8 @@ cmake_minimum_required(VERSION 3.17)
 
 CAmkESAddCPPInclude("${CMAKE_CURRENT_LIST_DIR}")
 
-DeclareCAmkESComponent_UART(UART_0 0)
-DeclareCAmkESComponent_UART(UART_1 1)
-DeclareCAmkESComponent_UART(UART_2 2)
-DeclareCAmkESComponent_UART(UART_3 3)
-DeclareCAmkESComponent_UART(UART_4 4)
+UART_DeclareCAmkESComponent(UART_0 0)
+UART_DeclareCAmkESComponent(UART_1 1)
+UART_DeclareCAmkESComponent(UART_2 2)
+UART_DeclareCAmkESComponent(UART_3 3)
+UART_DeclareCAmkESComponent(UART_4 4)

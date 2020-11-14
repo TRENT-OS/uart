@@ -8,7 +8,7 @@
 import <if_OS_BlockingWrite.camkes>;
 
 
-#define DECLARE_DTB_COMPONENT_UART(_type_, _dtb_name_) \
+#define UART_COMPONENT_DEFINE(_type_, _dtb_name_) \
     \
     component _type_ { \
         \
@@ -33,3 +33,27 @@ import <if_OS_BlockingWrite.camkes>;
 
 // platform specific UART details
 #include "UART_plat_config.camkes"
+
+
+#define UART_INSTANCE_CONNECT_CLIENT(\
+    _inst_,\
+    _client_rpc_,\
+    _client_input_port_,\
+    _client_output_port_,\
+    _client_has_data_) \
+    \
+    connection  seL4RPCCall _inst_ ## _Uart_rpc( \
+        from _client_rpc_, \
+        to   _inst_.UartDrv); \
+    \
+    connection  seL4SharedData  _inst_ ## _Uart_inputDataport( \
+        from _inst_.Uart_inputFifoDataport, \
+        to   _client_input_port_); \
+    \
+    connection  seL4SharedData  _inst_ ## _Uart_outputFifoDataport( \
+        from _client_output_port_, \
+        to   _inst_.Uart_outputDataport); \
+    \
+    connection  seL4Notification  _inst_ ## Uart_DataAvailable( \
+        from _inst_.Uart_DataAvailable, \
+        to   _client_has_data_);

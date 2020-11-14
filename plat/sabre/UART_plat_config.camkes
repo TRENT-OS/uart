@@ -7,8 +7,8 @@
 
 // use the alias names defined in the device tree
 
-DECLARE_DTB_COMPONENT_UART(UART_0, {"aliases":"serial0"})
-DECLARE_DTB_COMPONENT_UART(UART_1, {"aliases":"serial1"})
-DECLARE_DTB_COMPONENT_UART(UART_2, {"aliases":"serial2"})
-DECLARE_DTB_COMPONENT_UART(UART_3, {"aliases":"serial3"})
-DECLARE_DTB_COMPONENT_UART(UART_4, {"aliases":"serial4"})
+UART_COMPONENT_DEFINE(UART_0, {"aliases":"serial0"})
+UART_COMPONENT_DEFINE(UART_1, {"aliases":"serial1"})
+UART_COMPONENT_DEFINE(UART_2, {"aliases":"serial2"})
+UART_COMPONENT_DEFINE(UART_3, {"aliases":"serial3"})
+UART_COMPONENT_DEFINE(UART_4, {"aliases":"serial4"})

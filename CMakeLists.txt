@@ -19,7 +19,7 @@ cmake_minimum_required(VERSION 3.17)
 #       ID used in platsupport libs
 
 #
-function(DeclareCAmkESComponent_UART name id)
+function(UART_DeclareCAmkESComponent name id)
 
     DeclareCAmkESComponent(
         ${name}
