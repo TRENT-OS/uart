@@ -1,0 +1,11 @@
+/*
+ *  UART defaults for platform nitrogen6sx (i.MX6 SoloX based Nitrogen board)
+ *
+ *  Copyright (C) 2020, Hensoldt Cyber GmbH
+ *
+ */
+
+// use the alias names defined in the device tree
+
+UART_COMPONENT_DEFINE(UART_0, {"aliases":"serial0"})
+UART_COMPONENT_DEFINE(UART_1, {"aliases":"serial1"})
