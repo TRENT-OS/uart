@@ -5,6 +5,7 @@
  *
  */
 
+#pragma once
 
 UART_COMPONENT_DEFINE(UART_0, {"path":"/amba/serial@e0000000"})
 UART_COMPONENT_DEFINE(UART_1, {"path":"/amba/serial@e0001000"})

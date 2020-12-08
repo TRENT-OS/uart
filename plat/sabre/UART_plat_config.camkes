@@ -7,6 +7,8 @@
 
 // use the alias names defined in the device tree
 
+#pragma once
+
 UART_COMPONENT_DEFINE(UART_0, {"aliases":"serial0"})
 UART_COMPONENT_DEFINE(UART_1, {"aliases":"serial1"})
 UART_COMPONENT_DEFINE(UART_2, {"aliases":"serial2"})
