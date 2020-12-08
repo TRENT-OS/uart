@@ -6,6 +6,7 @@
 
 #pragma once
 
+import <std_connector.camkes>;
 import <if_OS_BlockingWrite.camkes>;
 
 
