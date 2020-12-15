@@ -9,13 +9,23 @@
 import <std_connector.camkes>;
 import <if_OS_BlockingWrite.camkes>;
 
+#if !defined(Uart_INPUT_FIFO_DATAPORT_SIZE)
+#   define Uart_DECLARE_INPUT_FIFO_DATAPORT()\
+    dataport  Buf Uart_inputFifoDataport
+#elif (Uart_INPUT_FIFO_DATAPORT_SIZE % 4096 != 0)
+#   error "please make sure that Uart_INPUT_FIFO_DATAPORT_SIZE is defined as a multiple of 4096".
+#else
+#   define Uart_DECLARE_INPUT_FIFO_DATAPORT()\
+    dataport  Buf(Uart_INPUT_FIFO_DATAPORT_SIZE) Uart_inputFifoDataport
+#endif
+
 
 #define UART_COMPONENT_DEFINE(_type_, _dtb_name_) \
     \
     component _type_ { \
         \
         provides  if_OS_BlockingWrite   UartDrv; \
-        dataport  Buf                   Uart_inputFifoDataport; \
+        Uart_DECLARE_INPUT_FIFO_DATAPORT(); \
         dataport  Buf                   Uart_outputDataport; \
         emits     EventDataAvailable    Uart_DataAvailable; \
         \

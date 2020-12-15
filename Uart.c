@@ -18,7 +18,6 @@
 #include <stdbool.h>
 
 #include "LibIO/FifoDataport.h"
-#include "LibUtil/CharFifo.h"
 #include "OS_Dataport.h"
 
 // UART ID used by lib-platsupport must be set
@@ -31,21 +30,15 @@
 #define Uart_Config_READ_BUF_SIZE       512
 #endif
 
-// Size of the driver's internal software FIFO, that sits between the UART's
-// hardware FIFO and the dataport FIFO
-#if !defined(Uart_Config_INTERNAL_FIFO_SIZE)
-#   define Uart_Config_INTERNAL_FIFO_SIZE    0
+// Here below the reason not to simply use OS_Dataport_getSize(port) is that
+// this does not work for the cases of user defined dataport size. Camkes
+// internally changes its behaviour making assumption on which the function
+// works decaying.
+#if !defined(Uart_INPUT_FIFO_DATAPORT_SIZE)
+#   define INPUT_FIFO_DATAPORT_SIZE(port) OS_Dataport_getSize(port)
+#else
+#   define INPUT_FIFO_DATAPORT_SIZE(port) Uart_INPUT_FIFO_DATAPORT_SIZE
 #endif
-
-
-#if defined(UART_USE_INTERNAL_FIFO)
-#error "UART_USE_INTERNAL_FIFO must not be defined here"
-#endif
-
-#if defined(Uart_Config_INTERNAL_FIFO_SIZE) && (Uart_Config_INTERNAL_FIFO_SIZE > 0)
-#define UART_USE_INTERNAL_FIFO
-#endif
-
 
 typedef struct
 {
@@ -54,83 +47,10 @@ typedef struct
     ps_io_ops_t      io_ops;
     ps_chardevice_t  ps_cdev;
     FifoDataport*    inputFifo;
-
-#ifdef UART_USE_INTERNAL_FIFO
-    CharFifo         internalFifo;
-#endif
-
 } ctx_t;
 
 static ctx_t ctx;
 
-
-//------------------------------------------------------------------------------
-#ifdef UART_USE_INTERNAL_FIFO
-
-// return the number of bytes written into the internal FIFO
-static size_t internalFifoWrite(
-    ctx_t* ctx,
-    char* buf,
-    size_t len)
-{
-    for (size_t pos = 0; pos < len; pos++)
-    {
-        if (!CharFifo_push(&ctx->internalFifo, &buf[pos]))
-        {
-            Debug_LOG_WARNING(
-                "internal FIFO full, discarding %zu bytes",
-                len - pos);
-
-            // failure to push indicate the FIFO is full
-            assert( CharFifo_isFull(&ctx->internalFifo) );
-
-            return pos;
-        }
-    }
-
-    return len;
-}
-
-#endif // UART_USE_INTERNAL_FIFO
-
-
-//------------------------------------------------------------------------------
-#ifdef UART_USE_INTERNAL_FIFO
-
-// this is a separate function to structure the code better. Currently it is
-// called when the internal FIFO has data, but within the function we don't
-// assume this is always the case.
-static size_t internalFifoDrainToDataPortFifo(
-    ctx_t* ctx)
-{
-    size_t internalFifoSize = CharFifo_getSize(&ctx->internalFifo);
-    for (size_t pos = 0; pos < internalFifoSize; pos++)
-    {
-        if (!FifoDataport_write(
-                ctx->inputFifo,
-                CharFifo_getFirst(&ctx->internalFifo),
-                1))
-        {
-            // dataport FIFO is full, can't write more data from the internal
-            // FIFO there. Note that the dataport FIFO is accessed by different
-            // threads, so we can't do something like
-            //     assert( CharFifo_isFull(ctx->inputFifo) );
-            // here. Immediately after we've found it to be full, the other
-            // thread my have read something from it, so it is no longer full.
-            return pos;
-        }
-
-        CharFifo_pop(&ctx->internalFifo);
-    }
-
-    // if we arrive here, the internal FIFO must be empty
-    Debug_LOG_DEBUG("internal FIFO empty again");
-
-    assert( CharFifo_isEmpty(&ctx->internalFifo) );
-
-    return internalFifoSize;
-}
-#endif // UART_USE_INTERNAL_FIFO
 
 //------------------------------------------------------------------------------
 void setOverflow(
@@ -158,31 +78,6 @@ void trigger_event(void)
     seL4_Yield();
 }
 
-//------------------------------------------------------------------------------
-#ifdef UART_USE_INTERNAL_FIFO
-static inline bool
-internalFifoDrainToDataPortFifoAndNotify(
-    ctx_t* ctx)
-{
-    // if there is something in the internal FIFO, then try to drain it
-    // into the dataport FIFO and trigger the event if there are new bytes in
-    // the dataport FIFO
-    if (CharFifo_isEmpty(&ctx->internalFifo))
-    {
-        return false;
-    }
-
-    size_t written = internalFifoDrainToDataPortFifo(ctx);
-    if (0 == written)
-    {
-        return false;
-    }
-
-    // we've written data, so trigger the event
-    trigger_event();
-    return true;
-}
-#endif // UART_USE_INTERNAL_FIFO
 
 //------------------------------------------------------------------------------
 static inline bool
@@ -250,18 +145,6 @@ void drain_input_fifo(
             continue; // keep draining the FIFO
         }
 
-#ifdef UART_USE_INTERNAL_FIFO
-        // if there is something in the internal FIFO, then try to drain it
-        // into the dataport FIFO first. Afterwards, if the internal FIFO is
-        // empty, all new UART data goes into the dataport directly while there
-        // is space. Otherwise the dataport FIFO is still full and all new data
-        // goes into the internal FIFO
-        if (internalFifoDrainToDataPortFifoAndNotify(ctx))
-        {
-            return;
-        }
-#endif // UART_USE_INTERNAL_FIFO
-
         // if there is no new data, we are done
         if (0 == bytesRead)
         {
@@ -271,42 +154,6 @@ void drain_input_fifo(
         // if we are here, data has been read from the UART's FIFO and it must
         // be transferred to the upper layer
 
-#ifdef UART_USE_INTERNAL_FIFO
-
-        // If the internal FIFO is not empty, this implies the dataport FIFO is
-        // full - otherwise we would have drained more data into it. So all new
-        // UART data goes into the internal FIFO then. What we can't put there
-        // will be discarded.
-        if (!CharFifo_isEmpty(&ctx->internalFifo))
-        {
-            size_t written = internalFifoWrite(ctx, readBuf, bytesRead);
-            assert( written <= bytesRead );
-            if (written < bytesRead)
-            {
-                // all FIFOs are full, so we have to discard the remaining data
-                setOverflow(ctx, true);
-
-                Debug_LOG_ERROR(
-                    "internal FIFO full, discarding %zu bytes",
-                    bytesRead - written);
-            }
-
-            // even if no data was written to the internal FIFO, we raise the
-            // signal. Rationale is, that the dataport FIFO is full anyway, so
-            // the upper layer shall drain it.
-            trigger_event();
-
-            // continue draining the UART FIFO, if all FIFOs are full it means
-            // we discard the data.
-            continue;
-        }
-
-        // if we are here and the internal FIFO is empty, any data from the
-        // UART must be written into the dataport FIFO. It's basically the same
-        // situation as if there was no internal FIFO.
-
-#endif // UART_USE_INTERNAL_FIFO
-
         // there is data from the UART, write it into the dataport FIFO
         size_t written = FifoDataport_write(
                              ctx->inputFifo,
@@ -315,43 +162,12 @@ void drain_input_fifo(
         assert( written <= bytesRead );
         if (written < bytesRead)
         {
-
-#ifdef UART_USE_INTERNAL_FIFO
-
-            // if we arrive here, the dataport FIFO is full, so write the
-            // remaining new UART data to the internal FIFO.
-            Debug_LOG_DEBUG("dataport FIFO full, filling internal FIFO");
-
-            // sanity check, the internal FIFO must be empty.
-            assert( CharFifo_isEmpty(&ctx->internalFifo) );
-
-            size_t lenLeft = bytesRead - written;
-            size_t writtenInternal = internalFifoWrite(
-                                         ctx,
-                                         &readBuf[written],
-                                         bytesRead - written);
-            assert( writtenInternal <= lenLeft );
-            if (writtenInternal < lenLeft)
-            {
-                // all FIFOs are full, so we have to discard the remaining data
-                setOverflow(ctx, true);
-
-                Debug_LOG_ERROR(
-                    "internal FIFO full, discarding %zu bytes",
-                    lenLeft - writtenInternal);
-            }
-
-#else // not UART_USE_INTERNAL_FIFO
-
             // all FIFO are full, so we have to discard the remaining data
             setOverflow(ctx, true);
 
             Debug_LOG_ERROR(
                 "dataport FIFO full, discarding %zu bytes",
                 bytesRead - written);
-
-#endif // [not] UART_USE_INTERNAL_FIFO
-
         }
 
         // notify the upper layer that there is new data.
@@ -436,14 +252,14 @@ void post_init(void)
 
     // the last byte of the dataport holds an overflow flag
     ctx.fifoOverflow = (char*)( (uintptr_t)OS_Dataport_getBuf(port)
-                                + OS_Dataport_getSize(port) - 1 );
+                                + INPUT_FIFO_DATAPORT_SIZE(port) - 1 );
 
     setOverflow(&ctx, false);
 
     ctx.inputFifo = (FifoDataport*)OS_Dataport_getBuf(port);
 
     // the last bytes is used a overflow indicator
-    size_t fifoCapacity = OS_Dataport_getSize(port)
+    size_t fifoCapacity = INPUT_FIFO_DATAPORT_SIZE(port)
                           - offsetof(FifoDataport, data) - 1;
 
     if (!FifoDataport_ctor(ctx.inputFifo, fifoCapacity))
@@ -451,17 +267,6 @@ void post_init(void)
         Debug_LOG_ERROR("FifoDataport_ctor() failed");
         return;
     }
-
-#ifdef UART_USE_INTERNAL_FIFO
-
-    static char internalBuf[Uart_Config_INTERNAL_FIFO_SIZE];
-    if (!CharFifo_ctor(&ctx.internalFifo, internalBuf, sizeof(internalBuf)))
-    {
-        Debug_LOG_ERROR("CharFifo_ctor() failed");
-        return;
-    }
-
-#endif // UART_USE_INTERNAL_FIFO
 
     // get a special set of io operations that are aware of the CAmkES memory
     // mappings, ie they can't really map anything, but look up the mapping in
