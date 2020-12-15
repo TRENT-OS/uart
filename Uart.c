@@ -166,7 +166,8 @@ void drain_input_fifo(
             setOverflow(ctx, true);
 
             Debug_LOG_ERROR(
-                "dataport FIFO full, discarding %zu bytes",
+                "dataport FIFO (capacity %zu) full, discarding %zu bytes",
+                FifoDataport_getCapacity(ctx->inputFifo),
                 bytesRead - written);
         }
 
