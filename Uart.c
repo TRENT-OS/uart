@@ -30,16 +30,6 @@
 #define Uart_Config_READ_BUF_SIZE       512
 #endif
 
-// Here below the reason not to simply use OS_Dataport_getSize(port) is that
-// this does not work for the cases of user defined dataport size. Camkes
-// internally changes its behaviour making assumption on which the function
-// works decaying.
-#if !defined(Uart_INPUT_FIFO_DATAPORT_SIZE)
-#   define INPUT_FIFO_DATAPORT_SIZE(port) OS_Dataport_getSize(port)
-#else
-#   define INPUT_FIFO_DATAPORT_SIZE(port) Uart_INPUT_FIFO_DATAPORT_SIZE
-#endif
-
 typedef struct
 {
     bool             isValid;
@@ -257,20 +247,26 @@ post_init(void)
     ctx.isValid = false;
 
     OS_Dataport_t port = OS_DATAPORT_ASSIGN(Uart_inputFifoDataport);
+    void* dataport_base = OS_Dataport_getBuf(port);
 
-    // the last byte of the dataport holds an overflow flag
-    ctx.fifoOverflow = (char*)( (uintptr_t)OS_Dataport_getBuf(port)
-                                + INPUT_FIFO_DATAPORT_SIZE(port) - 1 );
+    // OS_Dataport_getSize(port) only works for dataports of the CAmkES type
+    // "Buf", for "Buffer(x)" it fails. However, there we have "x" as a define
+    // anyway and can use this here.
+#if defined(Uart_INPUT_FIFO_DATAPORT_SIZE)
+    size_t dataport_size = Uart_INPUT_FIFO_DATAPORT_SIZE;
+#else
+    size_t dataport_size = OS_Dataport_getSize(port);
+#endif
 
+    // The last byte of the dataport is used a overflow indicator.
+    ctx.fifoOverflow = (char*)((uintptr_t)dataport_base + (dataport_size - 1) );
     setOverflow(&ctx, false);
 
-    ctx.inputFifo = (FifoDataport*)OS_Dataport_getBuf(port);
-
-    // the last bytes is used a overflow indicator
-    size_t fifoCapacity = INPUT_FIFO_DATAPORT_SIZE(port)
-                          - offsetof(FifoDataport, data) - 1;
-
-    if (!FifoDataport_ctor(ctx.inputFifo, fifoCapacity))
+    // the rest of the dataport can be used by the FIFO
+    ctx.inputFifo = (FifoDataport*)dataport_base;
+    if (!FifoDataport_ctor(
+            ctx.inputFifo,
+            (dataport_size - 1) - offsetof(typeof(*ctx.inputFifo), data) ))
     {
         Debug_LOG_ERROR("FifoDataport_ctor() failed");
         return;
