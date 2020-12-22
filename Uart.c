@@ -49,7 +49,7 @@ typedef struct
     FifoDataport*    inputFifo;
 } ctx_t;
 
-static ctx_t ctx;
+static ctx_t ctx = {0};
 
 
 //------------------------------------------------------------------------------
