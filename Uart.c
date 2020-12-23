@@ -4,7 +4,7 @@
  *  Copyright (C) 2020, Hensoldt Cyber GmbH
  */
 
-#include "LibDebug/Debug.h"
+#include "lib_debug/Debug.h"
 #include "OS_Dataport.h"
 
 #include <platsupport/chardev.h>
@@ -17,7 +17,7 @@
 
 #include <stdbool.h>
 
-#include "LibIO/FifoDataport.h"
+#include "lib_io/FifoDataport.h"
 #include "OS_Dataport.h"
 
 // UART ID used by lib-platsupport must be set

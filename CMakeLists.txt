@@ -31,7 +31,9 @@ function(UART_DeclareCAmkESComponent name id)
             -DUART_CONFIG_ID=${id}
         LIBS
             os_core_api
-            os_libs
+            lib_debug
+            lib_macros
+            lib_io
             platsupport
     )
 
