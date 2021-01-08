@@ -25,11 +25,6 @@
 #error "UART_CONFIG_ID missing"
 #endif
 
-// Number of bytes read at most from the UART FIFO at once
-#if !defined(Uart_Config_READ_BUF_SIZE)
-#define Uart_Config_READ_BUF_SIZE       512
-#endif
-
 typedef struct
 {
     bool             isValid;
@@ -63,32 +58,39 @@ isOverflow(
 
 //------------------------------------------------------------------------------
 static void
-trigger_event(void)
-{
-    Uart_DataAvailable_emit();
-
-    // give up our time slice, the upper layer may run now
-    seL4_Yield();
-}
-
-
-//------------------------------------------------------------------------------
-static void
 drain_input_fifo(
     ctx_t* ctx)
 {
+    if (isOverflow(ctx))
+    {
+        return;
+    }
+
     for (;;)
     {
-        // Uart_Config_READ_BUF_SIZE defines the amount of bytes we will read
-        // from the UART's FIFO at once. We trigger an event then, thus this
-        // value can be used to control granularity of potential context
-        // switches where the upper layer might run to pick up the data.
-        static char readBuf[Uart_Config_READ_BUF_SIZE];
+        // The number of bytes we can read from the hardware FIFO is limited by
+        // the number of bytes that are free in the dataport FIFO. Since it is
+        // a circular buffer, the free part might be split into two parts, that
+        // can only be accessed one at a time as a contiguous buffer each.
+        void* buffer = NULL;
+        size_t size = FifoDataport_getContiguousFree(ctx->inputFifo, &buffer);
+        if (0 == size)
+        {
+            // If the interrupt is level-triggered, then giving up our time
+            // slice here can relax the situation a lot. The app gets time to
+            // drain the dataport FIFO and when the next interrupt arrives
+            // here, we should be able to drain the hardware FIFO a bit more.
+            // In QEMU, with the yield and the app at the same priority than
+            // this driver, we get 1000 bytes/interrupt drained (ie processed),
+            // without the yield it's a poor 4 bytes/interrupt.
+            seL4_Yield();
+            return;
+        }
 
         int ret = ctx->ps_cdev.read(
                           &(ctx->ps_cdev),
-                          readBuf,
-                          sizeof(readBuf),
+                          buffer,
+                          size,
                           NULL,
                           NULL);
         if (ret < 0)
@@ -97,60 +99,30 @@ drain_input_fifo(
             return;
         }
 
-        if (ret > sizeof(readBuf))
-        {
-            Debug_LOG_ERROR("ctx.ps_cdev.read() returned %d (exceeds max %zu)",
-                            ret, sizeof(readBuf));
-            return;
-        }
-
-        // ret holds the number of bytes read into the buffer
+        // ret holds the number of bytes read into the buffer, we are done if
+        // there is no new data
         size_t bytesRead = (size_t)ret;
-
-
-        // do nothing on overflow
-        // ToDo: we need an API where the upper layer has to reset this.
-        if (isOverflow(ctx))
-        {
-            if (0 == bytesRead)
-            {
-                // UART FIFO is empty, all data has been discarded. Trigger
-                // event, so upper layer wakes up and sees the error.
-                trigger_event();
-                return;
-            }
-
-            continue; // keep draining the FIFO
-        }
-
-        // if there is no new data, we are done
         if (0 == bytesRead)
         {
             return;
         }
 
-        // if we are here, data has been read from the UART's FIFO and it must
-        // be transferred to the upper layer
-
-        // there is data from the UART, write it into the dataport FIFO
-        size_t written = FifoDataport_write(
-                             ctx->inputFifo,
-                             readBuf,
-                             bytesRead);
-        assert( written <= bytesRead );
-        if (written < bytesRead)
+        // We read some data, do a sanity check if the lower layer is behaving
+        // well.
+        if (bytesRead > size)
         {
-            // dataport FIFO is full, we have to discard the remaining data
-            setOverflow(ctx, true);
-
-            Debug_LOG_ERROR(
-                "dataport FIFO (capacity %zu) full, discarding %zu bytes",
-                FifoDataport_getCapacity(ctx->inputFifo),
-                bytesRead - written);
+            Debug_LOG_ERROR("ctx.ps_cdev.read() returned %d (exceeds max %zu)",
+                            ret, size);
+            // In debug builds this is fatal, in release builds we pretend that
+            // we have read nothing and return. Actually, we should report a
+            // fatal error here and stop the driver as there might be memory
+            // corruption.
+            assert(0);
+            return;
         }
 
-        // notify the upper layer that there is new data.
-        trigger_event();
+        FifoDataport_add(ctx->inputFifo, bytesRead);
+        Uart_DataAvailable_emit();
 
     } // end for (;;)
 }
