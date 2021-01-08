@@ -53,7 +53,8 @@ static ctx_t ctx;
 
 
 //------------------------------------------------------------------------------
-void setOverflow(
+void
+setOverflow(
     ctx_t* ctx,
     bool  isOverflow)
 {
@@ -62,7 +63,8 @@ void setOverflow(
 
 
 //------------------------------------------------------------------------------
-bool isOverflow(
+bool
+isOverflow(
     ctx_t* ctx)
 {
     return (0 != *(ctx->fifoOverflow));
@@ -70,7 +72,8 @@ bool isOverflow(
 
 
 //------------------------------------------------------------------------------
-void trigger_event(void)
+void
+trigger_event(void)
 {
     Uart_DataAvailable_emit();
 
@@ -113,7 +116,8 @@ lowLevelRead(
 
 
 //------------------------------------------------------------------------------
-void drain_input_fifo(
+void
+drain_input_fifo(
     ctx_t* ctx)
 {
     for (;;)
@@ -179,7 +183,9 @@ void drain_input_fifo(
 
 
 //------------------------------------------------------------------------------
-void dev_irq_handle(ps_irq_t *irq)
+void
+dev_irq_handle(
+    ps_irq_t *irq)
 {
     if (!ctx.isValid)
     {
@@ -243,7 +249,8 @@ UartDrv_write(
 //------------------------------------------------------------------------------
 
 //------------------------------------------------------------------------------
-void post_init(void)
+void
+post_init(void)
 {
     Debug_LOG_INFO("initialize UART");
 
