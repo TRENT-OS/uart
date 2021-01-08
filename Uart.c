@@ -25,6 +25,8 @@
 #error "UART_CONFIG_ID missing"
 #endif
 
+// #define UART_DRIVER_PROFILING
+
 typedef struct
 {
     bool             isValid;
@@ -32,6 +34,12 @@ typedef struct
     ps_io_ops_t      io_ops;
     ps_chardevice_t  ps_cdev;
     FifoDataport*    inputFifo;
+#ifdef UART_DRIVER_PROFILING
+    size_t           cnt_intr;
+    size_t           cnt_data;
+    size_t           cnt_data_delta
+    size_t           cnt_fifo_full;
+#endif
 } ctx_t;
 
 static ctx_t ctx = {0};
@@ -76,13 +84,19 @@ drain_input_fifo(
         size_t size = FifoDataport_getContiguousFree(ctx->inputFifo, &buffer);
         if (0 == size)
         {
+
+#ifdef UART_DRIVER_PROFILING
+            ctx->cnt_fifo_full++;
+#endif
+
             // If the interrupt is level-triggered, then giving up our time
             // slice here can relax the situation a lot. The app gets time to
             // drain the dataport FIFO and when the next interrupt arrives
             // here, we should be able to drain the hardware FIFO a bit more.
-            // In QEMU, with the yield and the app at the same priority than
-            // this driver, we get 1000 bytes/interrupt drained (ie processed),
-            // without the yield it's a poor 4 bytes/interrupt.
+            // In QEMU, adding a yield() when the app is running at the same
+            // priority as this driver, we get 1000 bytes per interrupt drained
+            // in the throughput test, without the yield it's a poor 4 bytes
+            // per interrupt.
             seL4_Yield();
             return;
         }
@@ -121,6 +135,23 @@ drain_input_fifo(
             return;
         }
 
+#ifdef UART_DRIVER_PROFILING
+        ctx->cnt_data += bytesRead;
+        // Log a message roughly every MiB, this works well enough to see some
+        // statistics in the throughput test.
+        ctx->cnt_data_delta += bytesRead;
+        if (ctx->cnt_data_delta > 1024*1024)
+        {
+            ctx->cnt_data_delta = 0;
+            Debug_LOG_INFO(
+                "data: %zu (0x%zx), num intr: %zu, num fifo full: %zu, bytes/intr: %zu",
+                ctx->cnt_data, ctx->cnt_data,
+                ctx->cnt_intr,
+                ctx->cnt_fifo_full,
+                ctx->cnt_data/ctx->cnt_intr);
+        }
+#endif
+
         FifoDataport_add(ctx->inputFifo, bytesRead);
         Uart_DataAvailable_emit();
 
@@ -139,6 +170,9 @@ dev_irq_handle(
     }
     else
     {
+#ifdef UART_DRIVER_PROFILING
+        ctx.cnt_intr++;
+#endif
         ctx.ps_cdev.handle_irq(&(ctx.ps_cdev));
         drain_input_fifo(&ctx);
     }
