@@ -74,7 +74,7 @@ void trigger_event(void)
 {
     Uart_DataAvailable_emit();
 
-    // give up out time slice, the upper layer may run now
+    // give up our time slice, the upper layer may run now
     seL4_Yield();
 }
 
@@ -162,7 +162,7 @@ void drain_input_fifo(
         assert( written <= bytesRead );
         if (written < bytesRead)
         {
-            // all FIFO are full, so we have to discard the remaining data
+            // dataport FIFO is full, we have to discard the remaining data
             setOverflow(ctx, true);
 
             Debug_LOG_ERROR(
@@ -269,7 +269,7 @@ void post_init(void)
         return;
     }
 
-    // get a special set of io operations that are aware of the CAmkES memory
+    // Get a special set of io operations that are aware of the CAmkES memory
     // mappings, ie they can't really map anything, but look up the mapping in
     // the existing CAmkES mappings instead.
     int ret = camkes_io_ops( &(ctx.io_ops) );
@@ -293,8 +293,8 @@ void post_init(void)
         return;
     }
 
-    // this is not a console, so we don't want that every CR (\n) is
-    // automatically turned into CR LF (\r\n)
+    // This is not a console, so we don't want that every CR (\n) is
+    // automatically turned into CR LF (\r\n).
     ctx.ps_cdev.flags &= ~SERIAL_AUTO_CR;
 
     ctx.isValid = true;
