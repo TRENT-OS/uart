@@ -73,39 +73,6 @@ trigger_event(void)
 
 
 //------------------------------------------------------------------------------
-static inline bool
-lowLevelRead(
-    ctx_t* ctx,
-    char readBuf[],
-    size_t readBufSize,
-    size_t* read)
-{
-    int ret = ctx->ps_cdev.read(
-                      &(ctx->ps_cdev),
-                      readBuf,
-                      readBufSize,
-                      NULL,
-                      NULL);
-    if (ret < 0)
-    {
-        Debug_LOG_ERROR("ctx.ps_cdev.read() failed, code %d", ret);
-        return false;
-    }
-
-    if (ret > readBufSize)
-    {
-        Debug_LOG_ERROR("ctx.ps_cdev.read() returned %d (exceeds max %zu)",
-                        ret, readBufSize);
-        return false;
-    }
-
-    // ret holds the number of bytes read into the buffer
-    *read = (size_t) ret;
-    return true;
-}
-
-
-//------------------------------------------------------------------------------
 static void
 drain_input_fifo(
     ctx_t* ctx)
@@ -118,11 +85,28 @@ drain_input_fifo(
         // switches where the upper layer might run to pick up the data.
         static char readBuf[Uart_Config_READ_BUF_SIZE];
 
-        size_t bytesRead = 0;
-        if (!lowLevelRead(ctx, readBuf, sizeof(readBuf), &bytesRead))
+        int ret = ctx->ps_cdev.read(
+                          &(ctx->ps_cdev),
+                          readBuf,
+                          sizeof(readBuf),
+                          NULL,
+                          NULL);
+        if (ret < 0)
         {
+            Debug_LOG_ERROR("ctx.ps_cdev.read() failed, code %d", ret);
             return;
         }
+
+        if (ret > sizeof(readBuf))
+        {
+            Debug_LOG_ERROR("ctx.ps_cdev.read() returned %d (exceeds max %zu)",
+                            ret, sizeof(readBuf));
+            return;
+        }
+
+        // ret holds the number of bytes read into the buffer
+        size_t bytesRead = (size_t)ret;
+
 
         // do nothing on overflow
         // ToDo: we need an API where the upper layer has to reset this.
