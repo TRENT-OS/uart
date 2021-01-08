@@ -53,7 +53,7 @@ static ctx_t ctx;
 
 
 //------------------------------------------------------------------------------
-void
+static void
 setOverflow(
     ctx_t* ctx,
     bool  isOverflow)
@@ -63,7 +63,7 @@ setOverflow(
 
 
 //------------------------------------------------------------------------------
-bool
+static bool
 isOverflow(
     ctx_t* ctx)
 {
@@ -72,7 +72,7 @@ isOverflow(
 
 
 //------------------------------------------------------------------------------
-void
+static void
 trigger_event(void)
 {
     Uart_DataAvailable_emit();
@@ -116,7 +116,7 @@ lowLevelRead(
 
 
 //------------------------------------------------------------------------------
-void
+static void
 drain_input_fifo(
     ctx_t* ctx)
 {
