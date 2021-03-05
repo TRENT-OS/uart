@@ -44,9 +44,17 @@ endfunction()
 # declare CAmkES components for all UARTs of a platform
 function(DeclareCAmkESComponents_for_UARTs)
 
-    include(
-        "${CMAKE_CURRENT_FUNCTION_LIST_DIR}/plat/${PLATFORM}/plat_uart.cmake"
-        OPTIONAL
-    )
+    set(dir_plat "${CMAKE_CURRENT_FUNCTION_LIST_DIR}/plat/${PLATFORM}")
+
+    # For now we assume that all platforms have UARTs, so there is always a
+    # platform specific folder with CMake files. If it is missing, the build
+    # will fail. In case there is ever a platform that has no UARTs, there
+    # should be an empty platform file that states this fact in a comment.
+    if(NOT IS_DIRECTORY "${dir_plat}")
+        message(FATAL_ERROR "unsupported platform: '${PLATFORM}'")
+    endif()
+
+    CAmkESAddCPPInclude("${dir_plat}")
+    include("${dir_plat}/plat_uart.cmake")
 
 endfunction()
