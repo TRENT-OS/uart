@@ -1,7 +1,7 @@
 #
-# UARTs on platform zynq7000
+# UARTs defaults for platform zynq7000
 #
-# Copyright (C) 2020, Hensoldt Cyber GmbH
+# Copyright (C) 2020-2021, HENSOLDT Cyber GmbH
 #
 
 cmake_minimum_required(VERSION 3.17)
