@@ -10,24 +10,45 @@ import <std_connector.camkes>;
 import <if_OS_BlockingWrite.camkes>;
 
 #include "lib_macros/Overload.h"
-#include "Uart_helper.camkes"
 
-// UART_COMPONENT_DEFINE() is an overloaded macro that can accept either 2
-// or 3 arguments.
+#if defined(Uart_INPUT_FIFO_DATAPORT_SIZE)
+#define Uart_DECLARE_INPUT_FIFO_DATAPORT_0() \
+    dataport  Buf(Uart_INPUT_FIFO_DATAPORT_SIZE) Uart_inputFifoDataport
+#else
+#define Uart_DECLARE_INPUT_FIFO_DATAPORT_0() \
+    dataport  Buf Uart_inputFifoDataport
+#endif
+
+#define Uart_DECLARE_INPUT_FIFO_DATAPORT_1(size)\
+    dataport Buf(size) Uart_inputFifoDataport
+
+// overloaded macro that can accept either 0 or 1 argument.
+#define Uart_DECLARE_INPUT_FIFO_DATAPORT(...) \
+    Overload_MACRO_1(Uart_DECLARE_INPUT_FIFO_DATAPORT, __VA_ARGS__)
+
+
+// overloaded macro that can accept either 2 or 3 arguments.
 #define UART_COMPONENT_DEFINE(...) \
     Overload_MACRO_3(UART_COMPONENT_DEFINE, __VA_ARGS__)
 
-// UART_COMPONENT_DEFINE_2() is the 2 arguments version of
-// UART_COMPONENT_DEFINE()
+// the 2 arguments version of UART_COMPONENT_DEFINE()
 #define UART_COMPONENT_DEFINE_2(_type_, _dtb_name_) \
-    UART_COMPONENT_DEFINE_(_type_, _dtb_name_, Uart_DECLARE_INPUT_FIFO_DATAPORT())
+    INTERNAL_UART_COMPONENT_DEFINE( \
+        _type_, \
+        _dtb_name_, \
+        Uart_DECLARE_INPUT_FIFO_DATAPORT() )
 
-// UART_COMPONENT_DEFINE_3() is the 3 arguments version of
-// UART_COMPONENT_DEFINE()
+// the 3 arguments version of UART_COMPONENT_DEFINE()
 #define UART_COMPONENT_DEFINE_3(_type_, _dtb_name_, size) \
-    UART_COMPONENT_DEFINE_(_type_, _dtb_name_, Uart_DECLARE_INPUT_FIFO_DATAPORT(size))
+    INTERNAL_UART_COMPONENT_DEFINE( \
+        _type_, \
+        _dtb_name_, \
+        Uart_DECLARE_INPUT_FIFO_DATAPORT(size))
 
-#define UART_COMPONENT_DEFINE_(_type_, _dtb_name_, _input_dp_declaration_) \
+#define INTERNAL_UART_COMPONENT_DEFINE( \
+    _type_, \
+    _dtb_name_, \
+    _input_dp_declaration_ ) \
     \
     component _type_ { \
         \
