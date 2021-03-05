@@ -51,7 +51,7 @@ import <if_OS_BlockingWrite.camkes>;
 
 
 // platform specific UART details
-#include "UART_plat_config.camkes"
+#include "plat_uart.camkes"
 
 
 #define UART_INSTANCE_CONNECT_CLIENT(\
