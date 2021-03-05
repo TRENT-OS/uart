@@ -45,7 +45,7 @@ endfunction()
 function(DeclareCAmkESComponents_for_UARTs)
 
     include(
-        "${CMAKE_CURRENT_FUNCTION_LIST_DIR}/plat/${PLATFORM}/CMakeLists.txt"
+        "${CMAKE_CURRENT_FUNCTION_LIST_DIR}/plat/${PLATFORM}/plat_uart.cmake"
         OPTIONAL
     )
 
