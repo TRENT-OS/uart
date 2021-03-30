@@ -1,0 +1,11 @@
+/*
+ *  UART defaults for platform zynqmp
+ *
+ *  Copyright (C) 2021, HENSOLDT Cyber GmbH
+ *
+ */
+
+#pragma once
+
+UART_COMPONENT_DEFINE(UART_0, {"path":"/amba/serial@ff000000"})
+UART_COMPONENT_DEFINE(UART_1, {"path":"/amba/serial@ff010000"})
