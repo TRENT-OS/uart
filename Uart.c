@@ -218,7 +218,7 @@ UartDrv_write(
                       NULL);
     if (ret != len)
     {
-        Debug_LOG_ERROR("write error, could only write %d of %zu bytes",
+        Debug_LOG_ERROR("write error, could only write %zd of %zu bytes",
                         ret, len);
     }
 }
