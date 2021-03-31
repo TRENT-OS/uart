@@ -1,8 +1,7 @@
 /*
- *  UART defaults for platform zynqmp
+ * UART defaults for platform zynqmp
  *
- *  Copyright (C) 2021, HENSOLDT Cyber GmbH
- *
+ * Copyright (C) 2021, HENSOLDT Cyber GmbH
  */
 
 #pragma once

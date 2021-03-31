@@ -1,8 +1,7 @@
 /*
- *  UART defaults for platform zynq7000
+ * UART defaults for platform zynq7000
  *
- *  Copyright (C) 2020, HENSOLDT Cyber GmbH
- *
+ * Copyright (C) 2020, HENSOLDT Cyber GmbH
  */
 
 #pragma once

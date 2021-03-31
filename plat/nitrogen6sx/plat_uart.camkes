@@ -1,8 +1,7 @@
 /*
- *  UART defaults for platform nitrogen6sx (i.MX6 SoloX based Nitrogen board)
+ * UART defaults for platform nitrogen6sx (i.MX6 SoloX based Nitrogen board)
  *
- *  Copyright (C) 2020, HENSOLDT Cyber GmbH
- *
+ * Copyright (C) 2020, HENSOLDT Cyber GmbH
  */
 
 // use the alias names defined in the device tree
