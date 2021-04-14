@@ -48,12 +48,12 @@ import <if_OS_BlockingWrite.camkes>;
 #define INTERNAL_UART_COMPONENT_DEFINE( \
     _type_, \
     _dtb_name_, \
-    _input_dp_declaration_ ) \
+    _input_port_declaration_ ) \
     \
     component _type_ { \
         \
         provides  if_OS_BlockingWrite   UartDrv; \
-        _input_dp_declaration_; \
+        _input_port_declaration_; \
         dataport  Buf                   Uart_outputDataport; \
         emits     EventDataAvailable    Uart_DataAvailable; \
         \
