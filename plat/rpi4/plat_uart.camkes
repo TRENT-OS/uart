@@ -1,0 +1,16 @@
+/*
+ * UART defaults for platform rpi4 (bcm2711 Raspberry Pi board)
+ *
+ * Copyright (C) 2020, HENSOLDT Cyber GmbH
+ */
+
+// use the path names defined in the device tree
+
+#pragma once
+
+UART_COMPONENT_DEFINE(UART_0, {"path":"/soc/serial@7e201000"}) // bluetooth
+UART_COMPONENT_DEFINE(UART_1, {"path":"/soc/serial@7e215040"}) // console
+UART_COMPONENT_DEFINE(UART_2, {"path":"/soc/serial@7e201400"})
+UART_COMPONENT_DEFINE(UART_3, {"path":"/soc/serial@7e201600"})
+UART_COMPONENT_DEFINE(UART_4, {"path":"/soc/serial@7e201800"})
+UART_COMPONENT_DEFINE(UART_5, {"path":"/soc/serial@7e201a00"})
