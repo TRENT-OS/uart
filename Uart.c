@@ -37,7 +37,7 @@ typedef struct
 #ifdef UART_DRIVER_PROFILING
     size_t           cnt_intr;
     size_t           cnt_data;
-    size_t           cnt_data_delta
+    size_t           cnt_data_delta;
     size_t           cnt_fifo_full;
 #endif
 } ctx_t;
