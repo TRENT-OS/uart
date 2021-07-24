@@ -1,0 +1,8 @@
+/*
+ * UART defaults for platform hifive (SiFive HiFive Unleashed board)
+ *
+ * Copyright (C) 2021, HENSOLDT Cyber GmbH
+ */
+
+UART_COMPONENT_DEFINE(UART_0, {"path":"/soc/serial@10010000"})
+UART_COMPONENT_DEFINE(UART_1, {"path":"/soc/serial@10011000"})
