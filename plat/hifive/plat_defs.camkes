@@ -1,0 +1,24 @@
+/* Copyright (C) 2021, HENSOLDT Cyber GmbH */
+
+#pragma once
+
+#define HARDWARE_UART_INTERFACES \
+	consumes Dummy dev; \
+	emits Dummy dummy_source;
+
+
+#define DTB_UART_HW_MAPPING_CONNECTION(_dst_) \
+    connection seL4DTBHardware conn_uart_ ## _dst_( \
+        from dummy_source, \
+        to   _dst_)
+
+
+#define HARDWARE_UART_COMPOSITION \
+	DTB_UART_HW_MAPPING_CONNECTION(dev);
+
+
+#define HARDWARE_UART_CONFIG( \
+	_dtb_name_) \
+	\
+	dev.dtb = dtb(_dtb_name_); \
+	dev.generate_interrupts = 1;
