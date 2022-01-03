@@ -102,11 +102,11 @@ drain_input_fifo(
         }
 
         int ret = ctx->ps_cdev.read(
-                          &(ctx->ps_cdev),
-                          buffer,
-                          size,
-                          NULL,
-                          NULL);
+                      &(ctx->ps_cdev),
+                      buffer,
+                      size,
+                      NULL,
+                      NULL);
         if (ret < 0)
         {
             Debug_LOG_ERROR("ctx.ps_cdev.read() failed, code %d", ret);
@@ -140,7 +140,7 @@ drain_input_fifo(
         // Log a message roughly every MiB, this works well enough to see some
         // statistics in the throughput test.
         ctx->cnt_data_delta += bytesRead;
-        if (ctx->cnt_data_delta > 1024*1024)
+        if (ctx->cnt_data_delta > 1024 * 1024)
         {
             ctx->cnt_data_delta = 0;
             Debug_LOG_INFO(
@@ -148,7 +148,7 @@ drain_input_fifo(
                 ctx->cnt_data, ctx->cnt_data,
                 ctx->cnt_intr,
                 ctx->cnt_fifo_full,
-                ctx->cnt_data/ctx->cnt_intr);
+                ctx->cnt_data / ctx->cnt_intr);
         }
 #endif
 
@@ -162,7 +162,7 @@ drain_input_fifo(
 //------------------------------------------------------------------------------
 void
 dev_irq_handle(
-    ps_irq_t *irq)
+    ps_irq_t* irq)
 {
     if (!ctx.isValid)
     {
