@@ -6,5 +6,8 @@
 
 #pragma once
 
-UART_COMPONENT_DEFINE(UART_0, {"path":"/amba/serial@ff000000"})
-UART_COMPONENT_DEFINE(UART_1, {"path":"/amba/serial@ff010000"})
+// Default size aligned with ARMs MMU page size.
+#define ZYNQMP_DEFAULT_INPUT_FIFO_PORT_SIZE 4096
+
+UART_COMPONENT_DEFINE(UART_0, {"path":"/amba/serial@ff000000"}, ZYNQMP_DEFAULT_INPUT_FIFO_PORT_SIZE)
+UART_COMPONENT_DEFINE(UART_1, {"path":"/amba/serial@ff010000"}, ZYNQMP_DEFAULT_INPUT_FIFO_PORT_SIZE)

@@ -236,17 +236,8 @@ post_init(void)
 
     ctx.isValid = false;
 
-    OS_Dataport_t port = OS_DATAPORT_ASSIGN(Uart_inputFifoDataport);
-    void* dataport_base = OS_Dataport_getBuf(port);
-
-    // OS_Dataport_getSize(port) only works for dataports of the CAmkES type
-    // "Buf", for "Buffer(x)" it fails. However, there we have "x" as a define
-    // anyway and can use this here.
-#if defined(Uart_INPUT_FIFO_DATAPORT_SIZE)
-    size_t dataport_size = Uart_INPUT_FIFO_DATAPORT_SIZE;
-#else
-    size_t dataport_size = OS_Dataport_getSize(port);
-#endif
+    size_t dataport_size = Uart_inputFifoDataport_get_size();
+    void* dataport_base = Uart_inputFifoDataport;
 
     // The last byte of the dataport is used a overflow indicator.
     ctx.fifoOverflow = (char*)((uintptr_t)dataport_base + (dataport_size - 1) );
