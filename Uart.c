@@ -34,6 +34,7 @@ typedef struct
     ps_io_ops_t      io_ops;
     ps_chardevice_t  ps_cdev;
     FifoDataport*    inputFifo;
+    volatile int     cb_flag;
 #ifdef UART_DRIVER_PROFILING
     size_t           cnt_intr;
     size_t           cnt_data;
@@ -186,6 +187,11 @@ dev_irq_handle(
 // Interface UartDrv
 //------------------------------------------------------------------------------
 
+void cb(void *ctx) {
+    (( ctx_t *)ctx)->cb_flag = 0;
+    THREAD_MEMORY_RELEASE();
+}
+
 //------------------------------------------------------------------------------
 void
 UartDrv_write(
@@ -207,17 +213,51 @@ UartDrv_write(
         return;
     }
 
+#ifdef ASYNC
+    while (ctx->flag) {
+        yield();
+        THREAD_MEMORY_ACQUIRE();
+    }
+
+    ctx->flag = 1;
+    THREAD_MEMORY_RELEASE();
+    ssize_t ret = ctx.ps_cdev.write(
+                      &(ctx.ps_cdev),
+                      OS_Dataport_getBuf(port),
+                      len,
+                      cb /* callback */,
+                      ctx /* token */);
+
+    if (ret < 0) {
+        Debug_LOG_ERROR("write error, code %zd", ret);
+        return
+    } else if (0 != ret) {
+        Debug_LOG_ERROR("write error, function returned %zd for %zu byte to write",
+                        ret, len);
+        return
+    }
+
+#else
+
     ssize_t ret = ctx.ps_cdev.write(
                       &(ctx.ps_cdev),
                       OS_Dataport_getBuf(port),
                       len,
                       NULL,
                       NULL);
-    if (ret != len)
-    {
+
+    if (ret < 0) {
+        Debug_LOG_ERROR("write error, code %zd", ret);
+        return;
+    } else if (ret != len) {
         Debug_LOG_ERROR("write error, could only write %zd of %zu bytes",
-                        ret, len);
+                        ret,len);
+        return;
     }
+
+#endif
+
+    /* success */
 }
 
 
