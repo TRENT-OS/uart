@@ -187,11 +187,13 @@ dev_irq_handle(
 // Interface UartDrv
 //------------------------------------------------------------------------------
 
-void cb(void *ctx) {
+//#define ASYNC
+#ifdef ASYNC
+void write_cb(ps_chardevice_t* d, enum chardev_status stat, size_t n_bytes_xferred, void *ctx) {
     (( ctx_t *)ctx)->cb_flag = 0;
     THREAD_MEMORY_RELEASE();
 }
-
+#endif
 //------------------------------------------------------------------------------
 void
 UartDrv_write(
@@ -214,27 +216,27 @@ UartDrv_write(
     }
 
 #ifdef ASYNC
-    while (ctx->flag) {
-        yield();
+    while (ctx.cb_flag) {
+        seL4_Yield();
         THREAD_MEMORY_ACQUIRE();
     }
 
-    ctx->flag = 1;
+    ctx.cb_flag = 1;
     THREAD_MEMORY_RELEASE();
     ssize_t ret = ctx.ps_cdev.write(
                       &(ctx.ps_cdev),
                       OS_Dataport_getBuf(port),
                       len,
-                      cb /* callback */,
-                      ctx /* token */);
+                      &write_cb /* callback */,
+                      &ctx /* token */);
 
     if (ret < 0) {
         Debug_LOG_ERROR("write error, code %zd", ret);
-        return
+        return;
     } else if (0 != ret) {
         Debug_LOG_ERROR("write error, function returned %zd for %zu byte to write",
                         ret, len);
-        return
+        return;
     }
 
 #else
@@ -272,6 +274,7 @@ post_init(void)
     Debug_LOG_INFO("initialize UART");
 
     ctx.isValid = false;
+    ctx.cb_flag = 0;
 
     size_t dataport_size = Uart_inputFifoDataport_get_size();
     void* dataport_base = Uart_inputFifoDataport;
