@@ -39,6 +39,7 @@ function(UART_DeclareCAmkESComponent name id)
 
 endfunction()
 
+include("SysCtrl/CMakeLists.txt")
 
 #-------------------------------------------------------------------------------
 # declare CAmkES components for all UARTs of a platform

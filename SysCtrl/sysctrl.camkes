@@ -1,0 +1,28 @@
+/*
+ *  SysCtrl
+ *
+ *  Copyright (C) 2022, HENSOLDT Cyber GmbH
+ *
+ */
+
+procedure if_SysCtrl {
+    void setup();
+};
+
+
+component SysCtrl {
+    control;
+
+    emits     Dummy  hw_src_car;
+    consumes  Dummy  dev_car;
+
+    provides      if_SysCtrl  sysctrl_rpc;
+
+    composition {
+        connection seL4DTBHardware con_hw_car(from hw_src_car, to dev_car);
+    }
+
+    configuration {
+        dev_car.dtb = dtb({"path":"/clock"});
+    }
+}

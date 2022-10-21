@@ -8,6 +8,7 @@
 
 import <std_connector.camkes>;
 import <if_OS_BlockingWrite.camkes>;
+import <UART/SysCtrl/sysctrl.camkes>;
 
 #define UART_COMPONENT_DEFINE(_type_, _dtb_name_, _port_size_) \
     \
@@ -17,6 +18,8 @@ import <if_OS_BlockingWrite.camkes>;
         dataport  Buf(_port_size_)      Uart_inputFifoDataport; \
         dataport  Buf                   Uart_outputDataport; \
         emits     EventDataAvailable    Uart_DataAvailable; \
+        \
+        maybe uses if_SysCtrl sysctrl_rpc; \
         \
         emits     Dummy  hw_src; \
         consumes  Dummy  dev; \

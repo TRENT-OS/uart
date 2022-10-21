@@ -1,0 +1,14 @@
+/*
+ * UART defaults for platform jetson-nano-2gb-dev-kit (Tegra X1 Jetson Nano 2GB Developer Kit)
+ *
+ * Copyright (C) 2022, HENSOLDT Cyber GmbH
+ */
+
+// use the alias names defined in the device tree
+
+// Default size aligned with ARMs MMU page size.
+#define JETSON_NANO_2GB_DEFAULT_INPUT_FIFO_PORT_SIZE 4096
+#define SYSCTRL_EXISTS
+
+UART_COMPONENT_DEFINE(UART_0, {"aliases":"serial0"}, JETSON_NANO_2GB_DEFAULT_INPUT_FIFO_PORT_SIZE)
+UART_COMPONENT_DEFINE(UART_1, {"aliases":"serial1"}, JETSON_NANO_2GB_DEFAULT_INPUT_FIFO_PORT_SIZE)

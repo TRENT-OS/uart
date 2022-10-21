@@ -250,6 +250,10 @@ post_init(void)
         return;
     }
 
+    if(sysctrl_rpc_setup != NULL) {
+        sysctrl_rpc_setup();
+    }
+
     // Get a special set of io operations that are aware of the CAmkES memory
     // mappings, ie they can't really map anything, but look up the mapping in
     // the existing CAmkES mappings instead.
