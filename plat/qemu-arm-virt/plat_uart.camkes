@@ -1,0 +1,15 @@
+/*
+ * UART defaults for platform qemu-arm-virt
+ *
+ * Copyright (C) 2022, HENSOLDT Cyber GmbH
+ */
+
+#pragma once
+
+// Default FIFO size is one page
+
+UART_COMPONENT_DEFINE(UART_0, {"path":"/pl011@9000000"}, 4096)
+UART_COMPONENT_DEFINE(UART_1, {"path":"/pl011@9040000"}, 4096)
+UART_COMPONENT_DEFINE(UART_2, {"path":"/pl011@9100000"}, 4096)
+UART_COMPONENT_DEFINE(UART_3, {"path":"/pl011@9110000"}, 4096)
+UART_COMPONENT_DEFINE(UART_4, {"path":"/pl011@9120000"}, 4096)
