@@ -263,6 +263,8 @@ post_init(void)
     // This will get the physical address of the UART peripheral from the
     // UART ID and then maps it using the passed io_ops. Since these ops are
     // just dummies, we expect them to find the UART's existing CAmkES mapping.
+    Debug_LOG_ERROR("opening UART ps_cdev_init(%d)", UART_CONFIG_ID);
+
     ps_chardevice_t* dev = ps_cdev_init(
                                UART_CONFIG_ID,
                                &(ctx.io_ops),
