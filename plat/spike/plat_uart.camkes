@@ -1,0 +1,8 @@
+/*
+ *  UART defaults for platform QEMU/spike
+ *
+ *  Copyright (C) 2020-2021, HENSOLDT Cyber GmbH
+ *
+ */
+
+// there are no UARTs
