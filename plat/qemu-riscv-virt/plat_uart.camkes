@@ -1,0 +1,13 @@
+/*
+ * UART defaults for platform qemu-riscv-virt
+ *
+ * Copyright (C) 2022, HENSOLDT Cyber GmbH
+ */
+
+#pragma once
+
+// Default FIFO size is one page
+UART_COMPONENT_DEFINE(UART_0, {"path":"/serial@10000000"}, 4096)
+UART_COMPONENT_DEFINE(UART_1, {"path":"/serial@10002000"}, 4096)
+UART_COMPONENT_DEFINE(UART_2, {"path":"/serial@10003000"}, 4096)
+UART_COMPONENT_DEFINE(UART_3, {"path":"/serial@10004000"}, 4096)
