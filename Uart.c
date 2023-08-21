@@ -207,17 +207,15 @@ UartDrv_write(
         return;
     }
 
-    ssize_t ret = ctx.ps_cdev.write(
+    ssize_t ret;
+    do {
+        ret = ctx.ps_cdev.write(
                       &(ctx.ps_cdev),
                       OS_Dataport_getBuf(port),
                       len,
                       NULL,
                       NULL);
-    if (ret != len)
-    {
-        Debug_LOG_ERROR("write error, could only write %zd of %zu bytes",
-                        ret, len);
-    }
+    } while (ret != len);
 }
 
 
