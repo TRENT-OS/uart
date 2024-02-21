@@ -1,9 +1,12 @@
 /*
  *  UART defaults for the platform jetson-tx2-nx-a206 (SeeedStudio A206 Carrier Board + Nvidia Jetson TX2 NX SoM)
+ * 
+ * Copyright (C) 2022-2024, HENSOLDT Cyber GmbH
  *
- *  Copyright (C) 2022, HENSOLDT Cyber GmbH
+ * SPDX-License-Identifier: GPL-2.0-or-later
  *
-*/
+ * For commercial licensing, contact: info.cyber@hensoldt.net
+ */
 
 // use the alias names defined in the device tree
 
