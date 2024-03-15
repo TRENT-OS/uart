@@ -8,6 +8,7 @@
 
 import <std_connector.camkes>;
 import <if_OS_BlockingWrite.camkes>;
+import <if_OS_SystemController.camkes>;
 
 #include "plat_defs.camkes"
 
@@ -19,6 +20,8 @@ import <if_OS_BlockingWrite.camkes>;
         dataport  Buf(_port_size_)      Uart_inputFifoDataport; \
         dataport  Buf                   Uart_outputDataport; \
         emits     EventDataAvailable    Uart_DataAvailable; \
+        \
+        maybe uses if_OS_SystemController_UART sysctrl_uart_client; \
         \
         HARDWARE_UART_INTERFACES \
         \
